@@ -7,30 +7,9 @@ from __future__ import division
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import constants
-import copy
+import sys
+
 import gillespy
-
-
-# Define initial values: 
-# ---------------------
-# n: number of bindings sites on protein and RNA
-# Concentrations [mol L^-1] of unbound Protein and RNA
-# On/Off rate constants for uncooperative binding events (Molar)
-# Volume
-# lp: Persistence length RNA
-# d: Euklidian distance between Protein-Domains (list)
-# L: Distance along RNA chain between the binding sites (list)
-
-n = 2
-prot0 = 0.2e-6
-rna0 = 0.4e-9
-on = [3e4, 1.4e5]#, 3e4, 3e4]
-off = [0.046, 0.13]#, 0.046, 0.046]
-volume = 5.65e-11
-lp = 0.9e-9
-d = [24.086e-10]#, 24.086e-10, 24.086e-10]
-L = [23*6e-10]#, 23*6.76e-10, 23*6.76e-10]
-
 
 
 class nxn(gillespy.Model):
@@ -38,7 +17,7 @@ class nxn(gillespy.Model):
 	Class for defining model parameters, species and reactions. Inherits from the model class of the gillespy library.
 	"""
 
-	def __init__(self, n, prot0, rna0, on, off, volume, lp, d, L):
+	def __init__(self, (n, prot0, rna0, on, off, volume, lp, d, L)):
 		"""
 		Initialize the model. Initial values are passed when creating a class instance:
 			n: number of bindings sites on protein and RNA
@@ -46,7 +25,7 @@ class nxn(gillespy.Model):
 			On/Off rate constants for uncooperative binding events (Molar) (list)
 			Volume
 			lp: Persistence length RNA
-			d: Euklidian distance between Protein-Domains (list)
+			d: Euklidian distance between Protein-Domains (np.array, dimension: n,n)
 			L: Distance along RNA chain between the binding sites (list)
 		"""
 
@@ -61,6 +40,7 @@ class nxn(gillespy.Model):
 		self.d = d
 		self.L = L
 
+
 		gillespy.Model.__init__(self, name="nxn")
 
 
@@ -68,26 +48,32 @@ class nxn(gillespy.Model):
 		#-------------
 		# convert Molar On rate constants to stochastic rate constants
 
-		self.on_stoch = []
+		self.on_stoch_bi = []
+
+		self.on_stoch_uni = []
 		self.off_stoch = []
 		for i in range(self.n):
-			self.on_stoch.append(gillespy.Parameter(
-				name="on_stoch" + str(i),
+			self.on_stoch_bi.append(gillespy.Parameter(
+				name="on_stoch_bi" + str(i),
 				expression=(self.on[i])/(self.my_volume*constants.N_A)))
+			self.on_stoch_uni.append(gillespy.Parameter(
+				name="on_stoch_uni" + str(i),
+				expression=self.on[i]))
 			self.off_stoch.append(gillespy.Parameter(
 				name="off_stoch" + str(i),
 				expression=self.off[i]))
 
 
-		self.add_parameter(self.on_stoch)
+		self.add_parameter(self.on_stoch_uni)
+		self.add_parameter(self.on_stoch_bi)
 		self.add_parameter(self.off_stoch)
 
 
 		# Species
 		#---------
 
-		self.prot = gillespy.Species(name='prot', initial_value=conc_to_pop(self.prot0))
-		self.rna = gillespy.Species(name='rna', initial_value=conc_to_pop(self.rna0))
+		self.prot = gillespy.Species(name='prot', initial_value=conc_to_pop(self.prot0, self.my_volume))
+		self.rna = gillespy.Species(name='rna', initial_value=conc_to_pop(self.rna0, self.my_volume))
 		self.add_species([self.prot, self.rna])
 
 		self.species_names = []
@@ -105,12 +91,13 @@ class nxn(gillespy.Model):
 		self.add_reaction(self.create_reactions())
 
 
-		self.timespan(np.linspace(0,200,200))
+		self.timespan(np.linspace(0,500,200))
 
 
 	def gauss_chain(self, L_arg, d_arg):
-		return ((1 + 4*(self.lp/L_arg) + (20/3) * (self.lp/L_arg)**2)/((1-(d_arg/L_arg)**2)**(9/2))*(3/(4*constants.pi *(self.lp/L_arg))**(3/2)) * np.exp(-(3*(d_arg/L_arg)**2)/(4*(self.lp/L_arg)*(1-(d_arg/L_arg)**2))))
+		#return ((1 + 4*(self.lp/L_arg) + (20/3) * (self.lp/L_arg)**2)/((1-(d_arg/L_arg)**2)**(9/2))*(3/(4*constants.pi *(self.lp/L_arg))**(3/2)) * np.exp(-(3*(d_arg/L_arg)**2)/(4*(self.lp/L_arg)*(1-(d_arg/L_arg)**2))))
 		#return ((3/(4*constants.pi*(self.lp/L_arg)))**(3/2)*np.exp(-(3*(d_arg/L_arg)**2)/(4*(self.lp/L_arg)))) #radial distribution function (Becker, Rosa, Everaers, (2010))
+		return ((3/(4*constants.pi*self.lp*L_arg))**(3/2)*np.exp(-(3*d_arg**2)/(4*self.lp*L_arg))*self.my_volume*10**(-3)) #radial distribution function of a worm like chain
 
 
 	def create_reactions(self):
@@ -145,7 +132,7 @@ class nxn(gillespy.Model):
 						name='r' + str(len(reactions)+1),
 						reactants={self.prot:1, self.rna:1},
 						products={product_object:1},
-						rate=self.on_stoch[reac_id]))
+						rate=self.on_stoch_bi[reac_id]))
 
 					#reverse reaction
 					reactions.append(gillespy.Reaction(
@@ -195,25 +182,24 @@ class nxn(gillespy.Model):
 						d_tot = np.nan
 						L_tot = np.nan
 						if bound_neighbour < reac_id:
-							d_tot = sum(self.d[bound_neighbour:(reac_id)])
+							d_tot = self.d[bound_neighbour, reac_id]
 							L_tot = sum(self.L[bound_neighbour:(reac_id)])
 						elif bound_neighbour > reac_id:
-							d_tot = sum(self.d[reac_id:(bound_neighbour)])
+							d_tot = self.d[bound_neighbour, reac_id]
 							L_tot = sum(self.L[reac_id:(bound_neighbour)])
 
 
 						#add gaussian chain distr as parameter
 						self.add_parameter(gillespy.Parameter(
 							name="chain_distr"+ str(len(reactions)+1),
-							#expression= 10)) #debugging
 							expression=self.gauss_chain(L_tot, d_tot)))
 
-						#forward reaction
+						#forward reaction, propensity function (example for 01 -> 11): [01]*[01]*on_stoch_1*chain_distr
 						reactions.append(gillespy.Reaction(
 							name='r' + str(len(reactions)+1),
 							reactants={reactant_object:1},
 							products={product_object:1},
-							propensity_function= '_' + str(s) + '*' + 'chain_distr' + str(len(reactions)+1)))
+							propensity_function= '_' + str(s) + '*' + 'chain_distr' + str(len(reactions)+1) + '*' + 'on_stoch_bi' + str(reac_id) + '*' + '_' + str(s)))
 
 						#reverse reaction
 						reactions.append(gillespy.Reaction(
@@ -243,24 +229,22 @@ class nxn(gillespy.Model):
 						l_L_tot = np.nan
 						r_L_tot = np.nan
 
-						l_d_tot = sum(self.d[l_bound_neighbour:reac_id])
+						l_d_tot = self.d[l_bound_neighbour, reac_id]
 						l_L_tot = sum(self.L[l_bound_neighbour:reac_id])
 
-						r_d_tot = sum(self.d[reac_id:r_bound_neighbour])
+						r_d_tot = self.d[r_bound_neighbour, reac_id]
 						r_L_tot = sum(self.L[reac_id:r_bound_neighbour])
 
 						#add gaussian chain distr as parameter
 						self.add_parameter(gillespy.Parameter(
 							name="l_chain_distr"+ str(len(reactions)+1),
-							#expression= 10)) #######################
 							expression=self.gauss_chain(l_L_tot, l_d_tot)))
 
 						self.add_parameter(gillespy.Parameter(
 							name="r_chain_distr"+ str(len(reactions)+1),
-							#expression= 10)) #######################
 							expression=self.gauss_chain(r_L_tot, r_d_tot)))
 
-						#forward reaction
+						#forward reaction, propensity function (example for 101 -> 111): [01]*[01]*on_stoch_1*left_chain_distr*right_chain_distr, !!still needs the rates and normalizing!!
 						reactions.append(gillespy.Reaction(
 							name='r' + str(len(reactions)+1),
 							reactants={reactant_object:1},
@@ -289,7 +273,28 @@ def init_run_model(labels=False, num_trajectories=1):
 	OUTPUT
 		list - (trajectories with time and species counts, species names)
 	"""
-	model = nxn(n, prot0, rna0, on, off, volume, lp, d, L)
+	# Define initial values: 
+	# ---------------------
+	# n: number of bindings sites on protein and RNA
+	# Concentrations [mol L^-1] of unbound Protein and RNA
+	# On/Off rate constants for uncooperative binding events (Molar)
+	# Volume
+	# lp: Persistence length RNA
+	# d: Euklidian distance between Protein-Domains (list)
+	# L: Distance along RNA chain between the binding sites (list)
+
+	n = 2
+	prot0 = 0.2e-6
+	rna0 = 0.4e-9
+	#off = [1,1]
+	on = [3e4, 1.4e5]
+	#on = [1.5e6, 9.3e7]
+	off = [0.046, 0.13]
+	volume = 5.65e-11
+	lp = 0.9e-9
+	d = np.array([[0, 24.068e-10], [24.068e-10, 0]])
+	L = [23*6e-10]#, 23*6.76e-10, 23*6.76e-10]
+	model = nxn((n, prot0, rna0, on, off, volume, lp, d, L))
 	return (model.run(show_labels=labels, number_of_trajectories=num_trajectories), model.species_names)
 
 
@@ -313,7 +318,7 @@ def plot_data(time, species, names):
 
 
 
-def conc_to_pop(conc_value):
+def conc_to_pop(conc_value, volume):
 	"""
 	Converts concentrations in Molar into absolute population values
 	"""
@@ -321,7 +326,7 @@ def conc_to_pop(conc_value):
 
 
 
-def pop_to_conc(pop_value):
+def pop_to_conc(pop_value, volume):
 	"""
 	Converts absolute population values to concentration in Molar
 	"""
@@ -337,7 +342,7 @@ if __name__ == '__main__':
 
 	names = results[1][1:]
 
-	print((pop_to_conc(species_avg[-1,0]) * pop_to_conc(species_avg[-1,1])) / pop_to_conc(species_avg[-1,-1]))
+	#print((pop_to_conc(species_avg[-1,0]) * pop_to_conc(species_avg[-1,1])) / pop_to_conc(species_avg[-1,-1]))
 
 	plot_data(time, species_avg, names)
 
