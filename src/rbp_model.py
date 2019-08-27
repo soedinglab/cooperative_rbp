@@ -10,14 +10,20 @@ from scipy import constants
 import sys
 
 import gillespy
+import pdb_extract as pdbe
 
+#persistence length
+lp = 2.223e-9
+
+#length per Base
+lpb = 6.76e-10
 
 class nxn(gillespy.Model):
 	"""
 	Class for defining model parameters, species and reactions. Inherits from the model class of the gillespy library.
 	"""
 
-	def __init__(self, (n, prot0, rna0, on, off, volume, lp, d, L)):
+	def __init__(self, (n, prot0, rna0, on, off, volume, lp, d, L, time)):
 		"""
 		Initialize the model. Initial values are passed when creating a class instance:
 			n: number of bindings sites on protein and RNA
@@ -91,13 +97,13 @@ class nxn(gillespy.Model):
 		self.add_reaction(self.create_reactions())
 
 
-		self.timespan(np.linspace(0,500,200))
+		self.timespan(np.linspace(0,time[0],time[1]))
 
 
 	def gauss_chain(self, L_arg, d_arg):
 		#return ((1 + 4*(self.lp/L_arg) + (20/3) * (self.lp/L_arg)**2)/((1-(d_arg/L_arg)**2)**(9/2))*(3/(4*constants.pi *(self.lp/L_arg))**(3/2)) * np.exp(-(3*(d_arg/L_arg)**2)/(4*(self.lp/L_arg)*(1-(d_arg/L_arg)**2))))
 		#return ((3/(4*constants.pi*(self.lp/L_arg)))**(3/2)*np.exp(-(3*(d_arg/L_arg)**2)/(4*(self.lp/L_arg)))) #radial distribution function (Becker, Rosa, Everaers, (2010))
-		return ((3/(4*constants.pi*self.lp*L_arg))**(3/2)*np.exp(-(3*d_arg**2)/(4*self.lp*L_arg))*self.my_volume*10**(-3)) #radial distribution function of a worm like chain
+		return ((3/(4*constants.pi*self.lp*L_arg))**(3/2)*np.exp(-(3*d_arg**2)/(4*self.lp*L_arg))) #radial distribution function of a worm like chain
 
 
 	def create_reactions(self):
@@ -192,7 +198,7 @@ class nxn(gillespy.Model):
 						#add gaussian chain distr as parameter
 						self.add_parameter(gillespy.Parameter(
 							name="chain_distr"+ str(len(reactions)+1),
-							expression=self.gauss_chain(L_tot, d_tot)))
+							expression=self.gauss_chain(L_tot, d_tot)*self.my_volume*10**(-3)))
 
 						#forward reaction, propensity function (example for 01 -> 11): [01]*[01]*on_stoch_1*chain_distr
 						reactions.append(gillespy.Reaction(
@@ -263,47 +269,97 @@ class nxn(gillespy.Model):
 
 
 
+def get_model_parameters(model_file, distance=True, pdb_file=None, canonical_file=None, residues=None):
+	"""
+	Reads the parameters and intial values, which define the model, from a CSV file. See an example file for the structure. The first column contains the label (n, prot0, rna0, on, off, volume, lp, L, time) and is seperated from the values by a semicolon ';'. The rows of the file should contain the following parameters:
+		n: number of bindings sites on protein and RNA
+		prot0, rna0: Concentrations [mol L^-1] of unbound Protein and RNA
+		On/Off rate constants for uncooperative binding events (Molar) (list) (optional, Kd values for individual domains can be used instead)
+		Kd (optional, on/off rate constants can be used instead) - list - Kd values for individual domains
+		Volume
+		d: (optional, can be calculated from coordinates in a PDB file) - Euklidian distance between Protein-Domains, Input 1D array with values seperatet by colons (np.array, dimension: n,n)
+		L: Distance along RNA chain between the binding sites (list), IN: no. of nucleotides, OUT: dist in metres
+		time (2 values): end point of simulation, number of time steps to save
 
-def init_run_model(labels=False, num_trajectories=1):
+	INPUT
+		model_file - str - path to the CSV file
+		distance - bool - True if a distance matrix is given in CSV, False to calculate distance matrix from PDB coordinates
+		pdb_file (optional)- str - path to the PDB file
+		canonical_file (optional) - str - path to a file containing the canonical sequence
+		residues (optional) - list, int - list of residue numbers in the canocial sequence of the binding sites
+
+	RETURN
+		list of model parameters - (n, prot0, rna0, on, off, volume, lp, d, L)
+	"""
+
+	params_dict = {}
+	params = []
+
+	with open(model_file, 'r') as f:
+		for line in f:
+			(key, val) = line.split(';')
+			params_dict[key] = val
+	f.close()
+
+
+	# add every parameter from the dictionary and check the input for errors (e.g. missing values...)
+	try:
+		params.append(int(params_dict['n'])) #n
+		params.append(float(params_dict['prot0'])) #prot0
+		params.append(float(params_dict['rna0'])) #rna0
+		if 'on' in params_dict and 'off' in params_dict:
+			params.append([float(i) for i in params_dict['on'].split(',')]) #on
+			params.append([float(i) for i in params_dict['off'].split(',')]) #off
+		elif 'Kd' in params_dict:
+			params.append([(1/float(i)) for i in params_dict['Kd'].split(',')])
+			params.append([1 for i in params_dict['Kd'].split(',')])
+		params.append(float(params_dict['volume'])) #volume
+		params.append(lp) #lp
+
+		if distance:
+			params.append(np.fromstring(params_dict['d'], dtype = float, sep = ',').reshape(2,2)) #d
+		else:
+			raise SystemExit('Distance calculation not implemented yet. Please provide a distance matrix.')
+			#params.append(pdbe.res_dist(pdb_file, canonical_file, residues)
+
+		params.append([(int(i)*lpb) for i in params_dict['L'].split(',')]) #L
+		params.append([int(i) for i in params_dict['time'].split(',')]) #end time, timesteps
+
+	except (KeyError, ValueError):
+		raise SystemExit('Error in Parameter file. Please check for errors and run again.')
+
+	return params
+
+
+
+def init_run_model(params, labels=False, num_trajectories=1, avg=True):
 	"""
 	Creates an instance of the model, runs the simulation and returns the results.
 	INPUT
+		params - list - parameters to initialize the model (n, prot0, rna0, on, off, volume, lp, L)
 		labels - bool - turn labels in trajectories on/off
 		num_trajectories - int - number of simulations to be returned
+		avg - bool - True to average the results over all trajectories, False to return all tractectories
 	OUTPUT
-		list - (trajectories with time and species counts, species names)
+		list - (time, species counts, species names)
 	"""
-	# Define initial values: 
-	# ---------------------
-	# n: number of bindings sites on protein and RNA
-	# Concentrations [mol L^-1] of unbound Protein and RNA
-	# On/Off rate constants for uncooperative binding events (Molar)
-	# Volume
-	# lp: Persistence length RNA
-	# d: Euklidian distance between Protein-Domains (list)
-	# L: Distance along RNA chain between the binding sites (list)
-
-	n = 2
-	prot0 = 0.2e-6
-	rna0 = 0.4e-9
-	#off = [1,1]
-	on = [3e4, 1.4e5]
-	#on = [1.5e6, 9.3e7]
-	off = [0.046, 0.13]
-	volume = 5.65e-11
-	lp = 0.9e-9
-	d = np.array([[0, 24.068e-10], [24.068e-10, 0]])
-	L = [23*6e-10]#, 23*6.76e-10, 23*6.76e-10]
-	model = nxn((n, prot0, rna0, on, off, volume, lp, d, L))
-	return (model.run(show_labels=labels, number_of_trajectories=num_trajectories), model.species_names)
+	
+	model = nxn(params)
+	results = model.run(show_labels=labels, number_of_trajectories=num_trajectories)
+	if avg and num_trajectories > 1:
+		return (results[0][:,0], np.average(np.dstack(results)[:,1:], axis = 2), model.species_names)
+	elif not avg or num_trajectories == 1:
+		return (results[0][:,0], results[0][:,1:], model.species_names)
 
 
 
-def plot_data(time, species, names):
+def plot_trajectories((time, species, names)):
 	"""
 	Creates plots from the simulated data.
 	INPUT
 		trajectories - np.array - results from the simulation
+		species - np.array - results from simulation
+		names - list, str - species names
 	"""
 	names.insert(0, 'rna')
 	for i in range(species.shape[1]-1):
@@ -335,21 +391,17 @@ def pop_to_conc(pop_value, volume):
 
 
 if __name__ == '__main__':
-	results = init_run_model(False, 25)
-	time = results[0][0][:,0]
-	species = np.dstack(results[0])[:,1:]
-	species_avg = np.average(species, axis = 2)
+	params = get_model_parameters('../examples/zbp1_kd.csv')
+	volume = params[5]
+	
+	trajectories = init_run_model(params, num_trajectories = 25)
 
-	names = results[1][1:]
+	#print Kd value based on concentrations at the end of the simulation
+	print((pop_to_conc(trajectories[1][-1,0], volume) * pop_to_conc(trajectories[1][-1,1], volume)) / pop_to_conc(trajectories[1][-1,-1], volume))
 
-	#print((pop_to_conc(species_avg[-1,0]) * pop_to_conc(species_avg[-1,1])) / pop_to_conc(species_avg[-1,-1]))
+	plot_trajectories(trajectories)
 
-	plot_data(time, species_avg, names)
 
-	#model = nxn(n, prot0, rna0, on, off, volume, lp, d, L)
+	#model = nxn(params)
 	#print(model.serialize())
-
-
-
-
 
