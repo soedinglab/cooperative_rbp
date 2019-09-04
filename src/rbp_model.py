@@ -101,8 +101,6 @@ class nxn(gillespy.Model):
 
 
 	def gauss_chain(self, L_arg, d_arg):
-		#return ((1 + 4*(self.lp/L_arg) + (20/3) * (self.lp/L_arg)**2)/((1-(d_arg/L_arg)**2)**(9/2))*(3/(4*constants.pi *(self.lp/L_arg))**(3/2)) * np.exp(-(3*(d_arg/L_arg)**2)/(4*(self.lp/L_arg)*(1-(d_arg/L_arg)**2))))
-		#return ((3/(4*constants.pi*(self.lp/L_arg)))**(3/2)*np.exp(-(3*(d_arg/L_arg)**2)/(4*(self.lp/L_arg)))) #radial distribution function (Becker, Rosa, Everaers, (2010))
 		return ((3/(4*constants.pi*self.lp*L_arg))**(3/2)*np.exp(-(3*d_arg**2)/(4*self.lp*L_arg))) #radial distribution function of a worm like chain
 
 
@@ -198,14 +196,14 @@ class nxn(gillespy.Model):
 						#add gaussian chain distr as parameter
 						self.add_parameter(gillespy.Parameter(
 							name="chain_distr"+ str(len(reactions)+1),
-							expression=self.gauss_chain(L_tot, d_tot)*self.my_volume*10**(-3)))
+							expression=self.gauss_chain(L_tot, d_tot)*10**(-3)/constants.N_A))#self.my_volume*10**(-3)))
 
 						#forward reaction, propensity function (example for 01 -> 11): [01]*[01]*on_stoch_1*chain_distr
 						reactions.append(gillespy.Reaction(
 							name='r' + str(len(reactions)+1),
 							reactants={reactant_object:1},
 							products={product_object:1},
-							propensity_function= '_' + str(s) + '*' + 'chain_distr' + str(len(reactions)+1) + '*' + 'on_stoch_bi' + str(reac_id) + '*' + '_' + str(s)))
+							propensity_function= '_' + str(s) + '*' + 'chain_distr' + str(len(reactions)+1) + '*' + 'on_stoch_uni' + str(reac_id)))
 
 						#reverse reaction
 						reactions.append(gillespy.Reaction(
@@ -242,20 +240,19 @@ class nxn(gillespy.Model):
 						r_L_tot = sum(self.L[reac_id:r_bound_neighbour])
 
 						#add gaussian chain distr as parameter
-						self.add_parameter(gillespy.Parameter(
-							name="l_chain_distr"+ str(len(reactions)+1),
-							expression=self.gauss_chain(l_L_tot, l_d_tot)))
+						#normalization factor
+						norm = (((4*constants.pi*self.lp*l_L_tot)/3)*((4*constants.pi*self.lp*r_L_tot)/3)*((3(l_L_tot+r_L_tot))/(constants.pi*4*self.lp*l_L_tot*r_L_tot)))**(3/2)
 
 						self.add_parameter(gillespy.Parameter(
-							name="r_chain_distr"+ str(len(reactions)+1),
-							expression=self.gauss_chain(r_L_tot, r_d_tot)))
+							name="chain_distr"+ str(len(reactions)+1),
+							expression=norm * self.gauss_chain(l_L_tot, l_d_tot) * self.gauss_chain(r_L_tot, r_d_tot)))
 
-						#forward reaction, propensity function (example for 101 -> 111): [01]*[01]*on_stoch_1*left_chain_distr*right_chain_distr, !!still needs the rates and normalizing!!
+						#forward reaction, propensity function (example for 101 -> 111): [01]*on_stoch_1*left_chain_distr*right_chain_distr
 						reactions.append(gillespy.Reaction(
 							name='r' + str(len(reactions)+1),
 							reactants={reactant_object:1},
 							products={product_object:1},
-							propensity_function= '_' + s + '*' + 'l_chain_distr' + str(len(reactions)+1) + '*' + 'r_chain_distr' + str(len(reactions)+1)))
+							propensity_function= '_' + s + '*' + 'chain_distr' + str(len(reactions)+1) + '*' + 'on_stoch_uni' + str(reac_id)))
 
 						#reverse reaction
 						reactions.append(gillespy.Reaction(
