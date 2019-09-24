@@ -13,10 +13,12 @@ import gillespy
 import pdb_extract as pdbe
 
 #persistence length
-lp = 2.223e-9
+#Rechendorff et. al., 2009
+lp = 4.6e-9
 
 #length per Base
-lpb = 6.76e-10
+#Rechendorff et. al., 2009
+lpb = 4.3e-10
 
 class nxn(gillespy.Model):
 	"""
@@ -100,8 +102,8 @@ class nxn(gillespy.Model):
 		self.timespan(np.linspace(0,time[0],time[1]))
 
 
-	def gauss_chain(self, L_arg, d_arg):
-		return ((3/(4*constants.pi*self.lp*L_arg))**(3/2)*np.exp(-(3*d_arg**2)/(4*self.lp*L_arg))) #radial distribution function of a worm like chain
+	def gauss_chain(self, x, mu, sig_sq):
+		return ((1/(2*constants.pi*sig_sq))**(3/2)*np.exp(-((x-mu)**2)/(2*sig_sq))) #radial distribution function of a worm like chain
 
 
 	def create_reactions(self):
@@ -115,12 +117,12 @@ class nxn(gillespy.Model):
 		for s in self.species_names: 
 			
 			#find empty binding sites per species
-			pos_reac = []
+			pos_reac = [] #list of all empty binding sites in current s
 			for ind, elem in enumerate(s):
 				if elem == '0':
 					pos_reac.append(ind)
 
-			#loop all binding sites per species and determine the possible reaction plus reverse reaction
+			#loop all empty binding sites per species and determine the possible reaction plus reverse reaction
 			for pos_reac_ind, reac_id in enumerate(pos_reac):
 				#determine the product of reaction, first as string, then the species object
 				product_name = list(s)
@@ -194,11 +196,12 @@ class nxn(gillespy.Model):
 
 
 						#add gaussian chain distr as parameter
+						sig_sq = (2/3) * self.lp * L_tot
 						self.add_parameter(gillespy.Parameter(
 							name="chain_distr"+ str(len(reactions)+1),
-							expression=self.gauss_chain(L_tot, d_tot)*10**(-3)/constants.N_A))#self.my_volume*10**(-3)))
+							expression=((self.gauss_chain(d_tot, 0, sig_sq)*10**(-3))/constants.N_A)))
 
-						#forward reaction, propensity function (example for 01 -> 11): [01]*[01]*on_stoch_1*chain_distr
+						#forward reaction, propensity function (example for 01 -> 11): [01]*on_stoch_1_uni*chain_distr
 						reactions.append(gillespy.Reaction(
 							name='r' + str(len(reactions)+1),
 							reactants={reactant_object:1},
@@ -240,19 +243,20 @@ class nxn(gillespy.Model):
 						r_L_tot = sum(self.L[reac_id:r_bound_neighbour])
 
 						#add gaussian chain distr as parameter
-						#normalization factor
-						norm = (((4*constants.pi*self.lp*l_L_tot)/3)*((4*constants.pi*self.lp*r_L_tot)/3)*((3(l_L_tot+r_L_tot))/(constants.pi*4*self.lp*l_L_tot*r_L_tot)))**(3/2)
-
+						sig_sq_l = (2/3) * self.lp * l_L_tot
+						sig_sq_r = (2/3) * self.lp * r_L_tot
+						mu = (((l_d_tot + r_d_tot) * sig_sq_l)**2)/(sig_sq_l + sig_sq_r)
+						sig_sq = (sig_sq_l * sig_sq_r)/(sig_sq_l * sig_sq_r)
 						self.add_parameter(gillespy.Parameter(
 							name="chain_distr"+ str(len(reactions)+1),
-							expression=norm * self.gauss_chain(l_L_tot, l_d_tot) * self.gauss_chain(r_L_tot, r_d_tot)))
+							expression=(((self.gauss_chain(l_d_tot, mu, sig_sq))*10**(-3))/constants.N_A)))
 
-						#forward reaction, propensity function (example for 101 -> 111): [01]*on_stoch_1*left_chain_distr*right_chain_distr
+						#forward reaction, propensity function (example for 101 -> 111): [01]*on_stoch_1*chain_distr
 						reactions.append(gillespy.Reaction(
 							name='r' + str(len(reactions)+1),
 							reactants={reactant_object:1},
 							products={product_object:1},
-							propensity_function= '_' + s + '*' + 'chain_distr' + str(len(reactions)+1) + '*' + 'on_stoch_uni' + str(reac_id)))
+							propensity_function= '_' + str(s) + '*' + 'chain_distr' + str(len(reactions)+1) + '*' + 'on_stoch_uni' + str(reac_id)))
 
 						#reverse reaction
 						reactions.append(gillespy.Reaction(
@@ -360,10 +364,10 @@ def plot_trajectories((time, species, names)):
 	"""
 	names.insert(0, 'rna')
 	for i in range(species.shape[1]-1):
-		plt.plot(time, species[:,i+1], label=names[i])
+		plt.plot(time, species[:,i+1], label=names[i+1])
 
 
-	plt.xlabel('Time [s]')
+	plt.xlabel('Time')
 	plt.ylabel('No. of Species')
 	plt.legend()
 	plt.tight_layout()
@@ -388,13 +392,15 @@ def pop_to_conc(pop_value, volume):
 
 
 if __name__ == '__main__':
-	params = get_model_parameters('../examples/zbp1_kd.csv')
+	#params = get_model_parameters('../examples/hnrnp_a1.csv')
+	params = get_model_parameters('../examples/zbp1.csv')
+	#params = get_model_parameters('../examples/tdp-43.csv')
 	volume = params[5]
 	
 	trajectories = init_run_model(params, num_trajectories = 25)
 
 	#print Kd value based on concentrations at the end of the simulation
-	print((pop_to_conc(trajectories[1][-1,0], volume) * pop_to_conc(trajectories[1][-1,1], volume)) / pop_to_conc(trajectories[1][-1,-1], volume))
+	print((pop_to_conc(trajectories[1][-1,0], volume) * pop_to_conc(trajectories[1][-1,1], volume)) / (pop_to_conc(sum(trajectories[1][-1,2:]), volume)))
 
 	plot_trajectories(trajectories)
 
