@@ -1,5 +1,6 @@
 """
-Gillespie model for cooperative binding of a Protein to ssRNA. n binding sites on protein and RNA
+Gillespie model for cooperative binding of a Protein to ssRNA. N binding sites on protein and RNA
+Includes a class for Gillespie simulations and a method for calculating the Kd based on the analytical solution.
 """
 
 # Imports
@@ -10,7 +11,6 @@ from scipy import constants
 import sys
 
 import gillespy
-import pdb_extract as pdbe
 
 #persistence length
 #Rechendorff et. al., 2009
@@ -23,6 +23,8 @@ lpb = 4.3e-10
 class nxn(gillespy.Model):
 	"""
 	Class for defining model parameters, species and reactions. Inherits from the model class of the gillespy library.
+	Methods (for external use):
+		analytical_kd - calculate the Kd based on the analytical solution
 	"""
 
 	def __init__(self, (n, prot0, rna0, on, off, volume, lp, d, L, time)):
@@ -268,26 +270,48 @@ class nxn(gillespy.Model):
 
 		return reactions
 
+	
+	def analytical_kd(self):
+		"""
+		Return the Kd calculated from the analytical solution. Model needs to be initialized with model parameters.
+		"""
+		kd = 0
+		# loop all species and determine kd for theoretical one step reaction from the unbound state to that species, total kd is the sum of all these indivudal kds
+		for s in self.species_names:
+			bound_sites = []
+			L_tot = []
+			d = []
+			c_eff = []
+			prev_ind = np.nan
+			for ind, elem in enumerate(s):
+				if elem == '1':
+					bound_sites.append(ind)
+					if not np.isnan(prev_ind):
+						L_tot = sum(self.L[prev_ind:ind])
+						d = self.d[prev_ind, ind]
+						sig_sq = (2/3) * self.lp * L_tot
+						c_eff.append(self.gauss_chain(d, 0, sig_sq) * 10**(-3) / constants.N_A)
+					prev_ind = ind
+
+			kd += np.prod(np.array(self.on)[bound_sites]) * np.prod(np.array(c_eff))
+
+		return (kd**(-1))
 
 
-def get_model_parameters(model_file, distance=True, pdb_file=None, canonical_file=None, residues=None):
+def get_model_parameters(model_file):
 	"""
 	Reads the parameters and intial values, which define the model, from a CSV file. See an example file for the structure. The first column contains the label (n, prot0, rna0, on, off, volume, lp, L, time) and is seperated from the values by a semicolon ';'. The rows of the file should contain the following parameters:
 		n: number of bindings sites on protein and RNA
 		prot0, rna0: Concentrations [mol L^-1] of unbound Protein and RNA
 		On/Off rate constants for uncooperative binding events (Molar) (list) (optional, Kd values for individual domains can be used instead)
 		Kd (optional, on/off rate constants can be used instead) - list - Kd values for individual domains
-		Volume
-		d: (optional, can be calculated from coordinates in a PDB file) - Euklidian distance between Protein-Domains, Input 1D array with values seperatet by colons (np.array, dimension: n,n)
+		Volume [L]
+		d: Euklidian distance between Protein-Domains, Input 1D array with values seperatet by colons (np.array, dimension: n,n)
 		L: Distance along RNA chain between the binding sites (list), IN: no. of nucleotides, OUT: dist in metres
-		time (2 values): end point of simulation, number of time steps to save
+		time (2 values): end point of simulation, number of time steps to store
 
 	INPUT
 		model_file - str - path to the CSV file
-		distance - bool - True if a distance matrix is given in CSV, False to calculate distance matrix from PDB coordinates
-		pdb_file (optional)- str - path to the PDB file
-		canonical_file (optional) - str - path to a file containing the canonical sequence
-		residues (optional) - list, int - list of residue numbers in the canocial sequence of the binding sites
 
 	RETURN
 		list of model parameters - (n, prot0, rna0, on, off, volume, lp, d, L)
@@ -312,17 +336,11 @@ def get_model_parameters(model_file, distance=True, pdb_file=None, canonical_fil
 			params.append([float(i) for i in params_dict['on'].split(',')]) #on
 			params.append([float(i) for i in params_dict['off'].split(',')]) #off
 		elif 'Kd' in params_dict:
-			params.append([(1/float(i)) for i in params_dict['Kd'].split(',')])
-			params.append([1 for i in params_dict['Kd'].split(',')])
+			params.append([(1/float(i)) for i in params_dict['Kd'].split(',')]) #on
+			params.append([1 for i in params_dict['Kd'].split(',')]) #off
 		params.append(float(params_dict['volume'])) #volume
 		params.append(lp) #lp
-
-		if distance:
-			params.append(np.fromstring(params_dict['d'], dtype = float, sep = ',').reshape(2,2)) #d
-		else:
-			raise SystemExit('Distance calculation not implemented yet. Please provide a distance matrix.')
-			#params.append(pdbe.res_dist(pdb_file, canonical_file, residues)
-
+		params.append(np.fromstring(params_dict['d'], dtype = float, sep = ',').reshape(2,2)) #d
 		params.append([(int(i)*lpb) for i in params_dict['L'].split(',')]) #L
 		params.append([int(i) for i in params_dict['time'].split(',')]) #end time, timesteps
 
@@ -346,6 +364,7 @@ def init_run_model(params, labels=False, num_trajectories=1, avg=True):
 	"""
 	
 	model = nxn(params)
+	print(model.analytical_kd())
 	results = model.run(show_labels=labels, number_of_trajectories=num_trajectories)
 	if avg and num_trajectories > 1:
 		return (results[0][:,0], np.average(np.dstack(results)[:,1:], axis = 2), model.species_names)
@@ -392,15 +411,17 @@ def pop_to_conc(pop_value, volume):
 
 
 if __name__ == '__main__':
-	#params = get_model_parameters('../examples/hnrnp_a1.csv')
-	params = get_model_parameters('../examples/zbp1.csv')
+	params = get_model_parameters('../examples/hnrnp_a1.csv')
+	#params = get_model_parameters('../examples/zbp1.csv')
 	#params = get_model_parameters('../examples/tdp-43.csv')
 	volume = params[5]
-	
+
+
 	trajectories = init_run_model(params, num_trajectories = 25)
 
 	#print Kd value based on concentrations at the end of the simulation
 	print((pop_to_conc(trajectories[1][-1,0], volume) * pop_to_conc(trajectories[1][-1,1], volume)) / (pop_to_conc(sum(trajectories[1][-1,2:]), volume)))
+
 
 	plot_trajectories(trajectories)
 
