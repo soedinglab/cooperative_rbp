@@ -340,7 +340,7 @@ def get_model_parameters(model_file):
 			params.append([1 for i in params_dict['Kd'].split(',')]) #off
 		params.append(float(params_dict['volume'])) #volume
 		params.append(lp) #lp
-		params.append(np.fromstring(params_dict['d'], dtype = float, sep = ',').reshape(2,2)) #d
+		params.append(np.fromstring(params_dict['d'], dtype = float, sep = ',').reshape(params[0],params[0])) #d
 		params.append([(int(i)*lpb) for i in params_dict['L'].split(',')]) #L
 		params.append([int(i) for i in params_dict['time'].split(',')]) #end time, timesteps
 
@@ -411,9 +411,10 @@ def pop_to_conc(pop_value, volume):
 
 
 if __name__ == '__main__':
-	params = get_model_parameters('../examples/hnrnp_a1.csv')
+	#params = get_model_parameters('../examples/hnrnp_a1.csv')
 	#params = get_model_parameters('../examples/zbp1.csv')
 	#params = get_model_parameters('../examples/tdp-43.csv')
+	params = get_model_parameters('../examples/N_4.csv')
 	volume = params[5]
 
 
@@ -426,6 +427,6 @@ if __name__ == '__main__':
 	plot_trajectories(trajectories)
 
 
-	#model = nxn(params)
-	#print(model.serialize())
+	model = nxn(params)
+	print(model.serialize())
 
