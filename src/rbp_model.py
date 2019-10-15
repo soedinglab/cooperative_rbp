@@ -247,8 +247,8 @@ class nxn(gillespy.Model):
 						#add gaussian chain distr as parameter
 						sig_sq_l = (2/3) * self.lp * l_L_tot
 						sig_sq_r = (2/3) * self.lp * r_L_tot
-						mu = (((l_d_tot + r_d_tot) * sig_sq_l)**2)/(sig_sq_l + sig_sq_r)
-						sig_sq = (sig_sq_l * sig_sq_r)/(sig_sq_l * sig_sq_r)
+						mu = ((l_d_tot + r_d_tot) * sig_sq_l)/(sig_sq_l + sig_sq_r)
+						sig_sq = (sig_sq_l * sig_sq_r)/(sig_sq_l + sig_sq_r)
 						self.add_parameter(gillespy.Parameter(
 							name="chain_distr"+ str(len(reactions)+1),
 							expression=(((self.gauss_chain(l_d_tot, mu, sig_sq))*10**(-3))/constants.N_A)))
@@ -273,7 +273,7 @@ class nxn(gillespy.Model):
 	
 	def analytical_kd(self):
 		"""
-		Return the Kd calculated from the analytical solution. Model needs to be initialized with model parameters.
+		Return the Kd calculated from the analytical solution. Class needs to be initialized with model parameters.
 		"""
 		kd = 0
 		# loop all species and determine kd for theoretical one step reaction from the unbound state to that species, total kd is the sum of all these indivudal kds
@@ -414,7 +414,7 @@ if __name__ == '__main__':
 	#params = get_model_parameters('../examples/hnrnp_a1.csv')
 	#params = get_model_parameters('../examples/zbp1.csv')
 	#params = get_model_parameters('../examples/tdp-43.csv')
-	params = get_model_parameters('../examples/N_4.csv')
+	params = get_model_parameters('../examples/N_3.csv')
 	volume = params[5]
 
 
@@ -427,6 +427,6 @@ if __name__ == '__main__':
 	plot_trajectories(trajectories)
 
 
-	model = nxn(params)
-	print(model.serialize())
+	#model = nxn(params)
+	#print(model.serialize())
 
