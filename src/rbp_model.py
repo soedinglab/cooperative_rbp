@@ -10,7 +10,7 @@ import numpy as np
 from scipy import constants
 import sys
 
-import gillespy
+import gillespy2 as gillespy
 
 #persistence length
 #Rechendorff et. al., 2009
@@ -27,7 +27,7 @@ class nxn(gillespy.Model):
 		analytical_kd - calculate the Kd based on the analytical solution
 	"""
 
-	def __init__(self, (n, prot0, rna0, on, off, volume, lp, d, L, time)):
+	def __init__(self, n, prot0, rna0, on, off, volume, lp, d, L, time):
 		"""
 		Initialize the model. Initial values are passed when creating a class instance:
 			n: number of bindings sites on protein and RNA
@@ -363,7 +363,7 @@ def init_run_model(params, labels=False, num_trajectories=1, avg=True):
 		list - (time, species counts, species names)
 	"""
 	
-	model = nxn(params)
+	model = nxn(*params)
 	print(model.analytical_kd())
 	results = model.run(show_labels=labels, number_of_trajectories=num_trajectories)
 	if avg and num_trajectories > 1:
@@ -373,7 +373,7 @@ def init_run_model(params, labels=False, num_trajectories=1, avg=True):
 
 
 
-def plot_trajectories((time, species, names)):
+def plot_trajectories(time, species, names):
 	"""
 	Creates plots from the simulated data.
 	INPUT
@@ -418,13 +418,13 @@ if __name__ == '__main__':
 	volume = params[5]
 
 
-	trajectories = init_run_model(params, num_trajectories = 25)
+	trajectories = init_run_model(params, num_trajectories = 50)
 
 	#print Kd value based on concentrations at the end of the simulation
-	print((pop_to_conc(trajectories[1][-1,0], volume) * pop_to_conc(trajectories[1][-1,1], volume)) / (pop_to_conc(sum(trajectories[1][-1,2:]), volume)))
+	print((np.mean(pop_to_conc(trajectories[1][-20:-1,0], volume)) * np.mean(pop_to_conc(trajectories[1][-20:-1,1], volume))) / (np.mean(pop_to_conc(np.sum(trajectories[1][-20:-1,2:], axis=1), volume))))
 
 
-	plot_trajectories(trajectories)
+	plot_trajectories(*trajectories)
 
 
 	#model = nxn(params)
