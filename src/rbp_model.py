@@ -358,7 +358,7 @@ def init_run_model(params, labels=False, num_trajectories=1, avg=True):
 		params - list - parameters to initialize the model (n, prot0, rna0, on, off, volume, lp, L)
 		labels - bool - turn labels in trajectories on/off
 		num_trajectories - int - number of simulations to be returned
-		avg - bool - True to average the results over all trajectories, False to return all tractectories
+		avg - bool - True to average the results over all trajectories, False to return all trajectories
 	OUTPUT
 		list - (time, species counts, species names)
 	"""
