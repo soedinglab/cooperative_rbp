@@ -12,13 +12,12 @@ import sys
 
 import gillespy2 as gillespy
 
+#review of chain flexibility in Bao, 2016
 #persistence length
-#Rechendorff et. al., 2009
-lp = 4.6e-9
+lp = 4e-9
 
-#length per Base
-#Rechendorff et. al., 2009
-lpb = 4.3e-10
+#length per base
+lpb = 5e-10
 
 class nxn(gillespy.Model):
 	"""
@@ -375,7 +374,7 @@ def init_run_model(params, labels=False, num_trajectories=1, avg=True):
 
 def plot_trajectories(time, species, names):
 	"""
-	Creates plots from the simulated data.
+	Creates overview plots from the simulated data.
 	INPUT
 		trajectories - np.array - results from the simulation
 		species - np.array - results from simulation
@@ -412,9 +411,9 @@ def pop_to_conc(pop_value, volume):
 
 if __name__ == '__main__':
 	#params = get_model_parameters('../examples/hnrnp_a1.csv')
-	#params = get_model_parameters('../examples/zbp1.csv')
+	params = get_model_parameters('../examples/zbp1.csv')
 	#params = get_model_parameters('../examples/tdp-43.csv')
-	params = get_model_parameters('../examples/N_3.csv')
+	#params = get_model_parameters('../examples/N_4.csv')
 	volume = params[5]
 
 
