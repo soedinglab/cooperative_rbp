@@ -411,9 +411,9 @@ def pop_to_conc(pop_value, volume):
 
 if __name__ == '__main__':
 	#params = get_model_parameters('../examples/hnrnp_a1.csv')
-	params = get_model_parameters('../examples/zbp1.csv')
+	#params = get_model_parameters('../examples/zbp1.csv')
 	#params = get_model_parameters('../examples/tdp-43.csv')
-	#params = get_model_parameters('../examples/N_4.csv')
+	params = get_model_parameters('../examples/N_4.csv')
 	volume = params[5]
 
 
