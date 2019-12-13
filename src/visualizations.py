@@ -119,7 +119,7 @@ def rbd_distribution():
 	"""Showing the distribution of RNA binding domains among RNA binding proteins. Data from RBPDB (http:// rbpdb.ccbr.utoronto.ca/)"""
 	def count_domains(domain_string):
 		domain_string = str(domain_string)
-		if domain_string == 'b\'\\N\'':
+		if domain_string == 'b\'\\\\N\'' or domain_string == 'b\'\'':
 			return 0
 		counting = False
 		counter = 0
@@ -139,6 +139,7 @@ def rbd_distribution():
 
 	#read data from file
 	domains = np.loadtxt('../examples/RBPDB_v1.3.1_proteins.tdt', dtype = int, delimiter = '\t', converters = {8: count_domains}, usecols = (8))
+	species = np.loadtxt('../examples/RBPDB_v1.3.1_proteins.tdt', dtype = str, delimiter = '\t',  usecols = (6))
 
 	#find max value
 	max_value = 0
@@ -149,30 +150,34 @@ def rbd_distribution():
 	#new array size max_value
 	domain_count = np.zeros(max_value+1)
 
-	for i in domains:
-		domain_count[i] += 1
+	counter = 0
+	# count number of domains, only if species == 'Homo sapiens'
+	for ind, elem in enumerate(domains):
+		if species[ind] == 'Homo sapiens':
+			counter += 1
+			domain_count[elem] += 1
 
 
 	#plot data
 	fig, ax = plt.subplots(1,1, figsize=(5,3))
 
-	ax.bar(range(1, 8), domain_count[1:8], width = 0.4)
+	ax.bar(range(1, len(domain_count)), domain_count[1:], width = 0.4)
 
-	ax.set_xticks(range(1,8))
+	ax.set_xticks(range(1, len(domain_count)))
 	ax.set_ylabel(r'Proteins')
 	ax.set_xlabel(r'Domains')
 	ax.spines['top'].set_visible(False)
 	ax.spines['right'].set_visible(False)
 	fig.tight_layout()
-	fig.savefig('../fig/rbp_distribution.pdf', bbox_inches = 'tight')
+	#fig.savefig('../rbp_distribution.pdf', bbox_inches = 'tight')
 	plt.show()
 
 
 
 if __name__ == '__main__':
-	compare_N()
+	#compare_N()
 	#N_4_trajectory()
 	#N_4_trajectory_detail()
 	#example_overview()
-	#rbd_distribution()
+	rbd_distribution()
 	pass
