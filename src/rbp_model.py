@@ -12,12 +12,19 @@ import sys
 
 import gillespy2 as gillespy
 
-#review of chain flexibility in Bao, 2016
-#persistence length
+#review of RNA chain flexibility in Bao, 2016
+#persistence length RNA
 lp = 4e-9
 
 #length per base
 lpb = 5e-10
+
+# protein chain flexibility parameters in Zhou, 2003
+# persistence length protein
+lp_p = 3.04e-10
+
+# length per amino acid
+lpaa = 3.8e-10
 
 class nxn(gillespy.Model):
 	"""
@@ -26,7 +33,7 @@ class nxn(gillespy.Model):
 		analytical_kd - calculate the Kd based on the analytical solution
 	"""
 
-	def __init__(self, n, prot0, rna0, on, off, volume, lp, d, L, time):
+	def __init__(self, n, prot0, rna0, on, off, volume, lp, d, L, L_p, lp_p, time):
 		"""
 		Initialize the model. Initial values are passed when creating a class instance:
 			n: number of bindings sites on protein and RNA
@@ -36,6 +43,8 @@ class nxn(gillespy.Model):
 			lp: Persistence length RNA
 			d: Euklidian distance between Protein-Domains (np.array, dimension: n,n)
 			L: Distance along RNA chain between the binding sites (list)
+			L_p: Distance along flexible linker between binding domains
+			lp_p: Persistence length protein
 		"""
 
 		# Initial values passed into the class
@@ -48,6 +57,8 @@ class nxn(gillespy.Model):
 		self.lp = lp
 		self.d = d
 		self.L = L
+		self.L_p = L_p
+		self.lp_p = lp_p
 
 
 		gillespy.Model.__init__(self, name="nxn")
@@ -187,15 +198,19 @@ class nxn(gillespy.Model):
 
 						#total distance between binding sites along RNA chain (L_tot) and between binding domains of the protein (d_tot)
 						d_tot = np.nan
-						L_tot = np.nan
+						L_tot = np.nan #RNA chain
+						L_p_tot = np.nan #Protein linker
 						if bound_neighbour < reac_id:
 							d_tot = self.d[bound_neighbour, reac_id]
 							L_tot = sum(self.L[bound_neighbour:(reac_id)])
+							L_p_tot = sum(self.L_p[bound_neighbour:(reac_id)])
 						elif bound_neighbour > reac_id:
 							d_tot = self.d[bound_neighbour, reac_id]
 							L_tot = sum(self.L[reac_id:(bound_neighbour)])
+							L_p_tot = sum(self.L_p[reac_id:(bound_neighbour)])
 
 
+						# TODO: include correction for flexible protein linker (if L_p_tot == 0:)
 						#add gaussian chain distr as parameter
 						sig_sq = (2/3) * self.lp * L_tot
 						self.add_parameter(gillespy.Parameter(
@@ -231,7 +246,11 @@ class nxn(gillespy.Model):
 							if r <= (len(s)-1) and s[r] == '1':
 								r_bound_neighbour = r
 
-						#total distance between binding sites along RNA chain (L_tot) and between binding domains of the protein (d_tot)
+						# Error and system exit for proteins with a flexible linker between binding domains and more than two binding sites. This can not be done easily in the simulation. The analytical result can be used instead.
+						if self.L_p[l_bound_neighbour] != 0 or slef.L_p[r_bound_neighbour] != 0:
+							raise SystemExit('Simulations can not be done with proteins containing a flexible linker between binding domains and more than two binding sites. Please use the function analytical_kd to estimate the total kd based on our analytical result.')
+
+						#total distance between binding sites along RNA chain (L_tot) and between binding domains of the protein (d_tot), left and right of the bound site
 						l_d_tot = np.nan
 						r_d_tot = np.nan
 						l_L_tot = np.nan
@@ -275,17 +294,19 @@ class nxn(gillespy.Model):
 		Return the Kd calculated from the analytical solution. Class needs to be initialized with model parameters.
 		"""
 		kd = 0
-		# loop all species and determine kd for theoretical one step reaction from the unbound state to that species, total kd is the sum of all these indivudal kds
+		# loop all species (binding configurations) and determine kd for theoretical one step reaction from the unbound state to the i'th species (binding configuration), total kd is the  inverse of the sum of all these individual kds
 		for s in self.species_names:
 			bound_sites = []
-			L_tot = []
-			d = []
+			L_tot = 0
+			d = 0
+			L_p_tot = 0
 			c_eff = []
 			prev_ind = np.nan
 			for ind, elem in enumerate(s):
 				if elem == '1':
 					bound_sites.append(ind)
-					if not np.isnan(prev_ind):
+					if not np.isnan(prev_ind): # find pairs of bound sites
+						# TODO: include correction for flexible protein linker (if L_p_tot == 0:)
 						L_tot = sum(self.L[prev_ind:ind])
 						d = self.d[prev_ind, ind]
 						sig_sq = (2/3) * self.lp * L_tot
@@ -341,6 +362,8 @@ def get_model_parameters(model_file):
 		params.append(lp) #lp
 		params.append(np.fromstring(params_dict['d'], dtype = float, sep = ',').reshape(params[0],params[0])) #d
 		params.append([(int(i)*lpb) for i in params_dict['L'].split(',')]) #L
+		params.append([(int(i)*lpaa) for i in params_dict['L_p'].split(',')]) #L_p
+		params.append(lp_p) #lp_p
 		params.append([int(i) for i in params_dict['time'].split(',')]) #end time, timesteps
 
 	except (KeyError, ValueError):
