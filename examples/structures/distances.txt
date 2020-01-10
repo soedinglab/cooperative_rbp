@@ -1,0 +1,70 @@
+The following aminoacid residues were used to calculate the distances between binding sites on protein domains.
+
+ZBP1 (2n8l):
+============
+KH3:
+	KH3 -> -: S432 -9.795  -0.989  11.208
+	KH3 -> KH4: K424 -21.804  -4.483   3.677
+KH4:
+	KH4 -> -: G506 23.514  -0.548  -7.599
+	KH4 -> KH3: Q514 16.021  -8.980  -1.847
+
+distances:
+	KH3 -> KH4 38.5e-10
+
+angles:
+	KH3 -> KH4 2.36
+	KH4 -> KH3 0.97
+
+
+
+hnRNP-A1 (6dcl):
+================
+RRM1:
+	RRM1 -> -: H101 -1.649  21.715 -27.103
+	RRM1 -> RRM2: R92 -11.035  23.503 -20.751
+
+RRM2:
+	RRM2 -> -: F108 0.737  34.619 -35.775
+	RRM2 -> RRM1: E176 -5.015  38.697 -32.022
+
+distances:
+	RRM1 -> RRM2 19.9e-10
+
+angles:
+	RRM1 -> RRM2 2.03
+	RRM2 -> RRM1 1.48
+
+
+
+PTB:
+====
+RRM1 (2AD9):
+	RRM1 -> -: R64 -0.012  -5.796   1.305
+	RRM1 -> RRM2_linker: L89 6.999   3.740  -1.244
+	RRM2_linker: N143 21.524  13.193   9.104
+
+RRM2 (2ADB):
+	RRM2 -> RRM1_linker: R254 4.184   9.912   7.607
+	RRM1_linker: L184 -2.280   8.387  -0.783
+	RRM2 -> RRM3_linker: I214 0.959  -1.204  -1.959
+	RRM3_linker: L260 -1.388   8.752 -10.042
+
+RRM3 (2ADC):
+	RRM3 -> RRM2_linker: R405 12.851   6.943  -3.284
+	RRM2_linker -> RRM2: S337 9.265  -7.920  -9.437
+	RRM3 -> RRM4: K368 13.187  -6.860   3.706
+
+
+RRM4 (2ADC):
+	RRM4 -> -: I531 -20.342  12.691  -3.463
+	RRM4 -> RRM3: R523 -10.944  -1.219   4.022
+
+distances:
+	RRM1 -> RRM2_linker 20.2e-10
+	RRM2 -> RRM1_linker 10.7e-10
+	RRM2 -> RRM3_linker 13.0e-10
+	RRM3 -> RRM2_linker 16.5e-10
+	RRM3 -> RRM2 24.8e-10
+
+
