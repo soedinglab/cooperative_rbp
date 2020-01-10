@@ -326,8 +326,9 @@ class nxn(gillespy.Model):
 						elif L_p_tot !=0:
 							R1 = self.d[prev_ind, prev_ind + 1] # TODO: this may need to be changed
 							R2 = self.d[ind, ind - 1] # TODO: this may need to be changed
-							c_eff.append(self.flex_peptide_chain(R1, R2, L_tot, L_p_tot)) #TODO: this gives weird results, check this!!
-							#print(self.flex_peptide_chain(R1, R2, L_tot, L_p_tot))
+							c_eff.append(self.flex_peptide_chain(R1, R2, L_tot, L_p_tot)* 10**(-3) / constants.N_A) #TODO: added unit conversion, c_eff still negative, the absolute seems reasonable
+							#print(self.flex_peptide_chain(R1, R2, L_tot, L_p_tot) * 10**(-3) / constants.N_A)
+							print(prev_ind, ind)
 					prev_ind = ind
 
 			kd += np.prod(np.array(self.on)[bound_sites]) * np.prod(np.array(c_eff))
