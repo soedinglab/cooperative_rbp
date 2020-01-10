@@ -115,7 +115,11 @@ class nxn(gillespy.Model):
 
 
 	def gauss_chain(self, x, mu, sig_sq):
-		return ((1/(2*constants.pi*sig_sq))**(3/2)*np.exp(-((x-mu)**2)/(2*sig_sq))) #radial distribution function of a worm like chain
+		return ((1/(2*constants.pi*sig_sq))**(3/2)*np.exp(-((x-mu)**2)/(2*sig_sq))) #radial distribution function of a worm like chain in the gaussian limit
+
+	def flex_peptide_chain(self, R1, R2, L, L_p):
+		sig_sq = (2/3)*self.lp*L + (2/3)*self.lp_p*L_p
+		return((1/((2*constants.pi*sig_sq)**(3/2))) * ((np.exp(-(1/(2*sig_sq))*(R1+R2)**2) - np.exp(-(1/(2*sig_sq))*(R1-R2)**2)) / (2*R1*R2/sig_sq)))
 
 
 	def create_reactions(self):
@@ -246,9 +250,9 @@ class nxn(gillespy.Model):
 							if r <= (len(s)-1) and s[r] == '1':
 								r_bound_neighbour = r
 
-						# Error and system exit for proteins with a flexible linker between binding domains and more than two binding sites. This can not be done easily in the simulation. The analytical result can be used instead.
-						if self.L_p[l_bound_neighbour] != 0 or slef.L_p[r_bound_neighbour] != 0:
-							raise SystemExit('Simulations can not be done with proteins containing a flexible linker between binding domains and more than two binding sites. Please use the function analytical_kd to estimate the total kd based on our analytical result.')
+						# Print warning at the end of initialization for proteins with a flexible linker between binding domains and more than two binding sites. This can not be done easily in the simulation. The analytical result can be used instead.
+						if self.L_p[l_bound_neighbour] != 0 or self.L_p[r_bound_neighbour] != 0:
+							simulation_warning = True
 
 						#total distance between binding sites along RNA chain (L_tot) and between binding domains of the protein (d_tot), left and right of the bound site
 						l_d_tot = np.nan
@@ -286,6 +290,10 @@ class nxn(gillespy.Model):
 							rate=self.off_stoch[reac_id]))
 
 
+		#Print warning for proteins with a flexible linker between binding domains and more than two binding sites. This can not be done easily in the simulation. The analytical result can be used instead.
+		if simulation_warning == True:
+			print('Please note, that simulations cannot be done with proteins containing a flexible linker between binding domains and more than two binding sites. Please use the function analytical_kd to estimate the total kd based on our analytical result.')
+
 		return reactions
 
 	
@@ -300,17 +308,26 @@ class nxn(gillespy.Model):
 			L_tot = 0
 			d = 0
 			L_p_tot = 0
+			R1 = 0
+			R2 = 0
 			c_eff = []
 			prev_ind = np.nan
 			for ind, elem in enumerate(s):
 				if elem == '1':
 					bound_sites.append(ind)
-					if not np.isnan(prev_ind): # find pairs of bound sites
+					if not np.isnan(prev_ind): # find pairs of bound sites, then we need to calculate c_eff
 						# TODO: include correction for flexible protein linker (if L_p_tot == 0:)
 						L_tot = sum(self.L[prev_ind:ind])
-						d = self.d[prev_ind, ind]
-						sig_sq = (2/3) * self.lp * L_tot
-						c_eff.append(self.gauss_chain(d, 0, sig_sq) * 10**(-3) / constants.N_A)
+						L_p_tot = sum(self.L_p[prev_ind:ind]) # TODO: this may need to be changed
+						if L_p_tot == 0:
+							d = self.d[prev_ind, ind]
+							sig_sq = (2/3) * self.lp * L_tot
+							c_eff.append(self.gauss_chain(d, 0, sig_sq) * 10**(-3) / constants.N_A)
+						elif L_p_tot !=0:
+							R1 = self.d[prev_ind, prev_ind + 1] # TODO: this may need to be changed
+							R2 = self.d[ind, ind - 1] # TODO: this may need to be changed
+							c_eff.append(self.flex_peptide_chain(R1, R2, L_tot, L_p_tot)) #TODO: this gives weird results, check this!!
+							#print(self.flex_peptide_chain(R1, R2, L_tot, L_p_tot))
 					prev_ind = ind
 
 			kd += np.prod(np.array(self.on)[bound_sites]) * np.prod(np.array(c_eff))
@@ -359,11 +376,11 @@ def get_model_parameters(model_file):
 			params.append([(1/float(i)) for i in params_dict['Kd'].split(',')]) #on
 			params.append([1 for i in params_dict['Kd'].split(',')]) #off
 		params.append(float(params_dict['volume'])) #volume
-		params.append(lp) #lp
+		params.append(lp) #persistence length RNA
 		params.append(np.fromstring(params_dict['d'], dtype = float, sep = ',').reshape(params[0],params[0])) #d
-		params.append([(int(i)*lpb) for i in params_dict['L'].split(',')]) #L
-		params.append([(int(i)*lpaa) for i in params_dict['L_p'].split(',')]) #L_p
-		params.append(lp_p) #lp_p
+		params.append([(int(i)*lpb) for i in params_dict['L'].split(',')]) #length of RNA linkers
+		params.append([(int(i)*lpaa) for i in params_dict['L_p'].split(',')]) #length of flexible protein linkers, lpaa (length per amino acid)
+		params.append(lp_p) #persistence length protein
 		params.append([int(i) for i in params_dict['time'].split(',')]) #end time, timesteps
 
 	except (KeyError, ValueError):
@@ -436,19 +453,18 @@ if __name__ == '__main__':
 	#params = get_model_parameters('../examples/hnrnp_a1.csv')
 	#params = get_model_parameters('../examples/zbp1.csv')
 	#params = get_model_parameters('../examples/tdp-43.csv')
-	params = get_model_parameters('../examples/N_4.csv')
+	#params = get_model_parameters('../examples/N_4.csv')
+	params = get_model_parameters('../examples/ptb.csv')
 	volume = params[5]
 
+	model = nxn(*params)
+	print(model.analytical_kd())
 
-	trajectories = init_run_model(params, num_trajectories = 50)
+	#trajectories = init_run_model(params, num_trajectories = 50)
 
 	#print Kd value based on concentrations at the end of the simulation
-	print((np.mean(pop_to_conc(trajectories[1][-20:-1,0], volume)) * np.mean(pop_to_conc(trajectories[1][-20:-1,1], volume))) / (np.mean(pop_to_conc(np.sum(trajectories[1][-20:-1,2:], axis=1), volume))))
+	#print((np.mean(pop_to_conc(trajectories[1][-20:-1,0], volume)) * np.mean(pop_to_conc(trajectories[1][-20:-1,1], volume))) / (np.mean(pop_to_conc(np.sum(trajectories[1][-20:-1,2:], axis=1), volume))))
 
 
-	plot_trajectories(*trajectories)
-
-
-	#model = nxn(params)
-	#print(model.serialize())
+	#plot_trajectories(*trajectories)
 
