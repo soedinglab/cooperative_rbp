@@ -1,4 +1,4 @@
 *.pyc
 *.swp
-.ipynb_checkpoints
-\fig
+*.ipynb_checkpoints
+fig/*
