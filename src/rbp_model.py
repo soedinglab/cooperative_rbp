@@ -119,7 +119,7 @@ class nxn(gillespy.Model):
 
 	def flex_peptide_chain(self, R1, R2, L, L_p):
 		sig_sq = (2/3)*self.lp*L + (2/3)*self.lp_p*L_p
-		return((1/((2*constants.pi*sig_sq)**(3/2))) * ((np.exp(-(1/(2*sig_sq))*(R1+R2)**2) - np.exp(-(1/(2*sig_sq))*(R1-R2)**2)) / (2*R1*R2/sig_sq)))
+		return((1/((2*constants.pi*sig_sq)**(3/2))) * ((np.exp(-(1/(2*sig_sq))*(R1-R2)**2) - np.exp(-(1/(2*sig_sq))*(R1+R2)**2)) / (2*R1*R2/sig_sq)))
 
 
 	def create_reactions(self):
@@ -327,8 +327,6 @@ class nxn(gillespy.Model):
 							R1 = self.d[prev_ind, prev_ind + 1] # TODO: this may need to be changed
 							R2 = self.d[ind, ind - 1] # TODO: this may need to be changed
 							c_eff.append(self.flex_peptide_chain(R1, R2, L_tot, L_p_tot)* 10**(-3) / constants.N_A) #TODO: added unit conversion, c_eff still negative, the absolute seems reasonable
-							#print(self.flex_peptide_chain(R1, R2, L_tot, L_p_tot) * 10**(-3) / constants.N_A)
-							print(prev_ind, ind)
 					prev_ind = ind
 
 			kd += np.prod(np.array(self.on)[bound_sites]) * np.prod(np.array(c_eff))
