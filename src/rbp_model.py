@@ -14,10 +14,10 @@ import gillespy2 as gillespy
 
 #review of RNA chain flexibility in Bao, 2016
 #persistence length RNA
-lp = 4e-9
+lp = 3e-9
 
 #length per base
-lpb = 5e-10
+lpb = 6e-10
 
 # protein chain flexibility parameters in Zhou, 2003
 # persistence length protein
@@ -128,6 +128,7 @@ class nxn(gillespy.Model):
 		"""
 
 		reactions = []
+		simulation_warning = False
 
 		#loop all species
 		for s in self.species_names: 
@@ -315,7 +316,7 @@ class nxn(gillespy.Model):
 			for ind, elem in enumerate(s):
 				if elem == '1':
 					bound_sites.append(ind)
-					if not np.isnan(prev_ind): # find pairs of bound sites, then we need to calculate c_eff
+					if not np.isnan(prev_ind): # find pairs of bound sites, then we to calculate c_eff
 						# TODO: include correction for flexible protein linker (if L_p_tot == 0:)
 						L_tot = sum(self.L[prev_ind:ind])
 						L_p_tot = sum(self.L_p[prev_ind:ind]) # TODO: this may need to be changed
@@ -326,7 +327,7 @@ class nxn(gillespy.Model):
 						elif L_p_tot !=0:
 							R1 = self.d[prev_ind, prev_ind + 1] # TODO: this may need to be changed
 							R2 = self.d[ind, ind - 1] # TODO: this may need to be changed
-							c_eff.append(self.flex_peptide_chain(R1, R2, L_tot, L_p_tot)* 10**(-3) / constants.N_A) #TODO: added unit conversion, c_eff still negative, the absolute seems reasonable
+							c_eff.append(self.flex_peptide_chain(R1, R2, L_tot, L_p_tot)* 10**(-3) / constants.N_A)
 					prev_ind = ind
 
 			kd += np.prod(np.array(self.on)[bound_sites]) * np.prod(np.array(c_eff))
@@ -449,21 +450,26 @@ def pop_to_conc(pop_value, volume):
 
 
 if __name__ == '__main__':
-	#params = get_model_parameters('../examples/hnrnp_a1.csv')
+	params = get_model_parameters('../examples/hnrnp_a1_corr.csv')
 	#params = get_model_parameters('../examples/zbp1.csv')
 	#params = get_model_parameters('../examples/tdp-43.csv')
 	#params = get_model_parameters('../examples/N_4.csv')
-	params = get_model_parameters('../examples/ptb.csv')
+	#params = get_model_parameters('../examples/ptb.csv')
 	volume = params[5]
-
 	model = nxn(*params)
+
+
+
+
 	print(model.analytical_kd())
+
+
+
 
 	#trajectories = init_run_model(params, num_trajectories = 50)
 
 	#print Kd value based on concentrations at the end of the simulation
 	#print((np.mean(pop_to_conc(trajectories[1][-20:-1,0], volume)) * np.mean(pop_to_conc(trajectories[1][-20:-1,1], volume))) / (np.mean(pop_to_conc(np.sum(trajectories[1][-20:-1,2:], axis=1), volume))))
-
 
 	#plot_trajectories(*trajectories)
 
