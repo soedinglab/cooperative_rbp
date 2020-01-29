@@ -169,8 +169,54 @@ def rbd_distribution():
 	ax.spines['top'].set_visible(False)
 	ax.spines['right'].set_visible(False)
 	fig.tight_layout()
-	#fig.savefig('../rbp_distribution.pdf', bbox_inches = 'tight')
+	fig.savefig('../rbp_distribution.pdf', bbox_inches = 'tight')
 	plt.show()
+
+
+def error_2(k1_err, k2_err, d_err, lp_err):
+	"""Returns the error of the Kd for two binding sites.
+	INPUT
+		k1_err - float
+		k2_err - float
+		d_err - float
+		lp_err - float
+
+	RETURN
+		Error of the Kd
+	"""
+
+
+
+def error_3(k1_err, k2_err, k3_err, d1_err, d2_err, lp_err):
+	"""Returns the error of the Kd for three binding sites.
+	INPUT
+		k1_err - float
+		k2_err - float
+		k3_err - float
+		d1_err - float
+		d2_err - float
+		lp_err - float
+
+	RETURN
+		Error of the Kd
+	"""
+
+
+def error_4(k1_err, k2_err, k3_err, k4_err, d1_err, d2_err, d3_err, lp_err):
+	"""Returns the error of the Kd for four binding sites.
+	INPUT
+		k1_err - float
+		k2_err - float
+		k3_err - float
+		k4_err - float
+		d1_err - float
+		d2_err - float
+		d3_err - float
+		lp_err - float
+	
+	RETURN
+		Error of the Kd
+	"""
 
 
 
