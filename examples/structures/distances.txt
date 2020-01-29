@@ -12,10 +12,6 @@ KH4:
 distances:
 	KH3 -> KH4 38.5e-10
 
-angles:
-	KH3 -> KH4 2.36
-	KH4 -> KH3 0.97
-
 
 
 hnRNP-A1 (6dcl):
@@ -30,10 +26,6 @@ RRM2:
 
 distances:
 	RRM1 -> RRM2 19.9e-10
-
-angles:
-	RRM1 -> RRM2 2.03
-	RRM2 -> RRM1 1.48
 
 
 
