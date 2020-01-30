@@ -31,6 +31,9 @@ class nxn(gillespy.Model):
 	Class for defining model parameters, species and reactions. Inherits from the model class of the gillespy library.
 	Methods (for external use):
 		analytical_kd - calculate the Kd based on the analytical solution
+		error_2 - returns the error of the Kd for two binding sites
+		error_3 - returns the error of the Kd for three binding sites
+		error_4 - returns the error of the Kd for four binding sites
 	"""
 
 	def __init__(self, n, prot0, rna0, on, off, volume, lp, d, L, L_p, lp_p, time):
@@ -335,6 +338,49 @@ class nxn(gillespy.Model):
 		return (kd**(-1))
 
 
+	def error_2(kd_tot, k1_err, k2_err, lp_err, lpb_err):
+		"""Returns the error of the Kd for two binding sites.
+		INPUT
+			k1_err - float - error in the measurement of the kd of the first domain
+			k2_err - float - error in the measurement of the kd of the first domain
+			lp_err - float - error in the persistence length
+			lpb_err - float - error in the length per base
+
+		RETURN
+			Error of the Kd
+		"""
+
+
+	def error_3(kd_tot, k1_err, k2_err, k3_err, lp_err, lpb_err):
+		"""Returns the error of the Kd for three binding sites.
+		INPUT
+			k1_err - float - error in the measurement of the kd of the first domain
+			k2_err - float - error in the measurement of the kd of the first domain
+			k3_err - float - error in the measurement of the kd of the first domain
+			lp_err - float - error in the persistence length
+			lpb_err - float - error in the length per base
+
+		RETURN
+			Error of the Kd
+		"""
+
+
+	def error_4(kd_tot, k1_err, k2_err, k3_err, k4_err, lp_err, lpb_err):
+		"""Returns the error of the Kd for four binding sites.
+		INPUT
+			k1_err - float - error in the measurement of the kd of the first domain
+			k2_err - float - error in the measurement of the kd of the first domain
+			k3_err - float - error in the measurement of the kd of the first domain
+			k4_err - float - error in the measurement of the kd of the first domain
+			lp_err - float - error in the persistence length
+			lpb_err - float - error in the length per base
+		
+		RETURN
+			Error of the Kd
+		"""
+
+
+
 def get_model_parameters(model_file):
 	"""
 	Reads the parameters and intial values, which define the model, from a CSV file. See an example file for the structure. The first column contains the label (n, prot0, rna0, on, off, volume, lp, L, time) and is seperated from the values by a semicolon ';'. The rows of the file should contain the following parameters:
@@ -456,20 +502,19 @@ if __name__ == '__main__':
 	#params = get_model_parameters('../examples/N_4.csv')
 	#params = get_model_parameters('../examples/ptb.csv')
 	volume = params[5]
-	model = nxn(*params)
 
 
 
 
-	print(model.analytical_kd())
+	#model = nxn(*params)
+	#print(model.analytical_kd())
 
 
 
 
-	#trajectories = init_run_model(params, num_trajectories = 50)
+	trajectories = init_run_model(params, num_trajectories = 50)
+#print Kd value based on concentrations at the end of the simulation
+	print((np.mean(pop_to_conc(trajectories[1][-20:-1,0], volume)) * np.mean(pop_to_conc(trajectories[1][-20:-1,1], volume))) / (np.mean(pop_to_conc(np.sum(trajectories[1][-20:-1,2:], axis=1), volume))))
 
-	#print Kd value based on concentrations at the end of the simulation
-	#print((np.mean(pop_to_conc(trajectories[1][-20:-1,0], volume)) * np.mean(pop_to_conc(trajectories[1][-20:-1,1], volume))) / (np.mean(pop_to_conc(np.sum(trajectories[1][-20:-1,2:], axis=1), volume))))
-
-	#plot_trajectories(*trajectories)
+	plot_trajectories(*trajectories)
 
