@@ -7,6 +7,7 @@ Includes a class for Gillespie simulations and a method for calculating the Kd b
 from __future__ import division
 import matplotlib.pyplot as plt
 import numpy as np
+import math
 from scipy import constants
 import sys
 
@@ -16,9 +17,11 @@ import gillespy2 as gillespy
 #these values are the mean of measurements from five studies
 #persistence length RNA
 lp = 2.7e-9
+lp_err = 0.6e-9
 
 #length per base
 lpb = 5.5e-10
+lpb_err = 0.9e-10
 
 # protein chain flexibility parameters in Zhou, 2003
 # persistence length protein
@@ -63,6 +66,8 @@ class nxn(gillespy.Model):
 		self.L = L
 		self.L_p = L_p
 		self.lp_p = lp_p
+		self.lp_err = lp_err
+		self.lpb_err = lpb_err
 
 
 		gillespy.Model.__init__(self, name="nxn")
@@ -339,42 +344,50 @@ class nxn(gillespy.Model):
 		return (kd**(-1))
 
 
-	def error_2(kd_tot, k1_err, k2_err, lp_err, lpb_err):
+	def error_2(self, kd_tot, k1_err, k2_err):
 		"""Returns the error of the Kd for two binding sites.
 		INPUT
 			k1_err - float - error in the measurement of the kd of the first domain
 			k2_err - float - error in the measurement of the kd of the first domain
-			lp_err - float - error in the persistence length
-			lpb_err - float - error in the length per base
 
 		RETURN
 			Error of the Kd
 		"""
+		c_12 = 0
+		c_12_err = 0
+
+		#Does the protein have a flexible linker
+		if self.L_p[0] == 0:
+			sig_sq = (2/3) * self.lp * self.L[0]
+			sig_sq_err = math.sqrt(((2/3) * lpb * self.L[0] * self.lp_err)**2 + ((2/3) * self.lp * lpb_err)**2)
+			c_12 = (self.gauss_chain(self.d[0,1], 0, sig_sq)*10**(-3))/constants.N_A
+			c_12_err = math.sqrt(((-2) / (2*constants.pi)**(3/2) * 3 * sig_sq**(5/2)) * np.exp((-self.d[0,1]**2) / (2 * sig_sq)) + 1/(2*constants.pi*sig_sq)**(3/2) * np.exp((-self.d[0,1]**2) / (2 * sig_sq)) * (self.d[0,1]**2)/(2*sig_sq**2) * sig_sq_err**2)
+		else: # TODO: Implement error for proteins with flexbile linker
+			print("Error for proteins with felxible linker not implementet yet.")
+			return
+
+		return math.sqrt((k1_err**2 / (kd_tot**4 * self.on[0]**-4)) + (k2_err**2 / (kd_tot**4 * self.on[1]**-4)) + (k1_err**2 / (kd_tot**4 * (c_12 / (self.on[0]**-2 * self.on[1]**-1)**2 ))) + (k2_err**2 / (kd_tot**4 * (c_12 / (self.on[0]**-1 * self.on[1]**-2)**2 )))+ (c_12_err**2 / (kd_tot**4 * (self.on[0]**-1 * self.on[1]**-1)**-1)))
 
 
-	def error_3(kd_tot, k1_err, k2_err, k3_err, lp_err, lpb_err):
+	def error_3(self, kd_tot, k1_err, k2_err, k3_err):
 		"""Returns the error of the Kd for three binding sites.
 		INPUT
 			k1_err - float - error in the measurement of the kd of the first domain
 			k2_err - float - error in the measurement of the kd of the first domain
 			k3_err - float - error in the measurement of the kd of the first domain
-			lp_err - float - error in the persistence length
-			lpb_err - float - error in the length per base
 
 		RETURN
 			Error of the Kd
 		"""
 
 
-	def error_4(kd_tot, k1_err, k2_err, k3_err, k4_err, lp_err, lpb_err):
+	def error_4(self, kd_tot, k1_err, k2_err, k3_err, k4_err):
 		"""Returns the error of the Kd for four binding sites.
 		INPUT
 			k1_err - float - error in the measurement of the kd of the first domain
 			k2_err - float - error in the measurement of the kd of the first domain
 			k3_err - float - error in the measurement of the kd of the first domain
 			k4_err - float - error in the measurement of the kd of the first domain
-			lp_err - float - error in the persistence length
-			lpb_err - float - error in the length per base
 		
 		RETURN
 			Error of the Kd
@@ -497,8 +510,8 @@ def pop_to_conc(pop_value, volume):
 
 
 if __name__ == '__main__':
-	params = get_model_parameters('../examples/hnrnp_a1_corr.csv')
-	#params = get_model_parameters('../examples/zbp1.csv')
+	#params = get_model_parameters('../examples/hnrnp_a1.csv')
+	params = get_model_parameters('../examples/zbp1_corr.csv')
 	#params = get_model_parameters('../examples/tdp-43.csv')
 	#params = get_model_parameters('../examples/N_4.csv')
 	#params = get_model_parameters('../examples/ptb.csv')
@@ -508,14 +521,16 @@ if __name__ == '__main__':
 
 
 	#model = nxn(*params)
-	#print(model.analytical_kd())
+	#kd=model.analytical_kd()
+	#print(kd)
 
 
 
 
-	trajectories = init_run_model(params, num_trajectories = 50)
+	trajectories = init_run_model(params, num_trajectories = 10)
 #print Kd value based on concentrations at the end of the simulation
 	print((np.mean(pop_to_conc(trajectories[1][-20:-1,0], volume)) * np.mean(pop_to_conc(trajectories[1][-20:-1,1], volume))) / (np.mean(pop_to_conc(np.sum(trajectories[1][-20:-1,2:], axis=1), volume))))
 
 	plot_trajectories(*trajectories)
+
 
