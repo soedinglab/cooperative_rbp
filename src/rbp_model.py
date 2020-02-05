@@ -13,11 +13,12 @@ import sys
 import gillespy2 as gillespy
 
 #review of RNA chain flexibility in Bao, 2016
+#these values are the mean of measurements from five studies
 #persistence length RNA
-lp = 3e-9
+lp = 2.7e-9
 
 #length per base
-lpb = 6e-10
+lpb = 5.5e-10
 
 # protein chain flexibility parameters in Zhou, 2003
 # persistence length protein
