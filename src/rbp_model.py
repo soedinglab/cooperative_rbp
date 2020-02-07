@@ -326,16 +326,15 @@ class nxn(gillespy.Model):
 				if elem == '1':
 					bound_sites.append(ind)
 					if not np.isnan(prev_ind): # find pairs of bound sites, then we to calculate c_eff
-						# TODO: include correction for flexible protein linker (if L_p_tot == 0:)
 						L_tot = sum(self.L[prev_ind:ind])
-						L_p_tot = sum(self.L_p[prev_ind:ind]) # TODO: this may need to be changed
+						L_p_tot = sum(self.L_p[prev_ind:ind]) # TODO: this is not super exact
 						if L_p_tot == 0:
 							d = self.d[prev_ind, ind]
 							sig_sq = (2/3) * self.lp * L_tot
 							c_eff.append(self.gauss_chain(d, 0, sig_sq) * 10**(-3) / constants.N_A)
 						elif L_p_tot !=0:
-							R1 = self.d[prev_ind, prev_ind + 1] # TODO: this may need to be changed
-							R2 = self.d[ind, ind - 1] # TODO: this may need to be changed
+							R1 = self.d[prev_ind, prev_ind + 1] # TODO: this is not super exact
+							R2 = self.d[ind, ind - 1] # TODO: this is not super exact
 							c_eff.append(self.flex_peptide_chain(R1, R2, L_tot, L_p_tot)* 10**(-3) / constants.N_A)
 					prev_ind = ind
 
@@ -358,15 +357,19 @@ class nxn(gillespy.Model):
 
 		#Does the protein have a flexible linker
 		if self.L_p[0] == 0:
+			L_bases = self.L[0] / lpb
 			sig_sq = (2/3) * self.lp * self.L[0]
-			sig_sq_err = math.sqrt(((2/3) * lpb * self.L[0] * self.lp_err)**2 + ((2/3) * self.lp * lpb_err)**2)
+			sig_sq_err = math.sqrt(((2/3) * lpb * L_bases * self.lp_err)**2 + ((2/3) * self.lp * lpb_err)**2)
 			c_12 = (self.gauss_chain(self.d[0,1], 0, sig_sq)*10**(-3))/constants.N_A
-			c_12_err = math.sqrt(((-2) / (2*constants.pi)**(3/2) * 3 * sig_sq**(5/2)) * np.exp((-self.d[0,1]**2) / (2 * sig_sq)) + 1/(2*constants.pi*sig_sq)**(3/2) * np.exp((-self.d[0,1]**2) / (2 * sig_sq)) * (self.d[0,1]**2)/(2*sig_sq**2) * sig_sq_err**2)
+			c_12_err = math.sqrt((c_12 * ((-2/(3 * sig_sq**(1/2))) + (self.d[0,1]**2)/(2*sig_sq**2)) * sig_sq_err)**2)
 		else: # TODO: Implement error for proteins with flexbile linker
-			print("Error for proteins with felxible linker not implementet yet.")
-			return
+			print("Error for proteins with flexible linker not implementet yet. Returning 0 instead.")
+			return 0
 
-		return math.sqrt((k1_err**2 / (kd_tot**4 * self.on[0]**-4)) + (k2_err**2 / (kd_tot**4 * self.on[1]**-4)) + (k1_err**2 / (kd_tot**4 * (c_12 / (self.on[0]**-2 * self.on[1]**-1)**2 ))) + (k2_err**2 / (kd_tot**4 * (c_12 / (self.on[0]**-1 * self.on[1]**-2)**2 )))+ (c_12_err**2 / (kd_tot**4 * (self.on[0]**-1 * self.on[1]**-1)**-1)))
+		k1 = self.on[0]**(-1)
+		k2 = self.on[1]**(-1)
+
+		return math.sqrt(k1_err**2 * kd_tot**4 * (-k1**-2 - (c_12/(k1**2 * k2))) + k2_err**2 * kd_tot**4 * (-k2**-2 - (c_12/(k2**2 * k1))) + c_12_err**2 * kd_tot**4 * (k1 * k2)**(-2))
 
 
 	def error_3(self, kd_tot, k1_err, k2_err, k3_err):
@@ -523,6 +526,9 @@ if __name__ == '__main__':
 	#model = nxn(*params)
 	#kd=model.analytical_kd()
 	#print(kd)
+
+
+	#print(model.error_2(kd, 0.4e-6, 0.13e-6))
 
 
 
