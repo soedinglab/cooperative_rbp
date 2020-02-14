@@ -60,3 +60,21 @@ distances:
 	RRM3 -> RRM2 24.8e-10
 
 
+
+IGF2BP3:
+========
+RRM12 (6FQ1):
+	RRM12 -> KH12_linker: V74 -1.170   9.080  24.854
+	KH12_linker: D156 -3.987  13.842  25.101
+
+
+KH12 (6GQE):
+	KH12 -> RRM12_linker: G215 -9.441   3.997   0.889
+	RRM12_linker: D195 14.076  -1.227   8.990
+	KH12 -> KH34_linker: G296 16.416  13.549  28.640
+	KH34_linker: I343 12.721  11.619  17.434
+
+
+KH34 (3KRM, from IGF2BP1):
+	KH34 -> KH12_linker: -41.159  -2.427  10.859
+	KH12_linker: G422 -55.449  14.841  -2.404
