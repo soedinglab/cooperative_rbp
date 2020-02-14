@@ -150,6 +150,12 @@ class nxn(gillespy.Model):
 
 			#loop all empty binding sites per species and determine the possible reaction plus reverse reaction
 			for pos_reac_ind, reac_id in enumerate(pos_reac):
+
+				# Print warning at the end of initialization for proteins with a flexible linker between binding domains and more than two binding sites. This can not be done easily in the simulation. The analytical result can be used instead.
+				if np.sum(self.L_p) != 0:
+					simulation_warning = True
+
+
 				#determine the product of reaction, first as string, then the species object
 				product_name = list(s)
 				product_name[reac_id] = '1'
@@ -224,7 +230,6 @@ class nxn(gillespy.Model):
 							L_p_tot = sum(self.L_p[reac_id:(bound_neighbour)])
 
 
-						# TODO: include correction for flexible protein linker (if L_p_tot == 0:)
 						#add gaussian chain distr as parameter
 						sig_sq = (2/3) * self.lp * L_tot
 						self.add_parameter(gillespy.Parameter(
@@ -260,9 +265,7 @@ class nxn(gillespy.Model):
 							if r <= (len(s)-1) and s[r] == '1':
 								r_bound_neighbour = r
 
-						# Print warning at the end of initialization for proteins with a flexible linker between binding domains and more than two binding sites. This can not be done easily in the simulation. The analytical result can be used instead.
-						if self.L_p[l_bound_neighbour] != 0 or self.L_p[r_bound_neighbour] != 0:
-							simulation_warning = True
+						
 
 						#total distance between binding sites along RNA chain (L_tot) and between binding domains of the protein (d_tot), left and right of the bound site
 						l_d_tot = np.nan
@@ -515,7 +518,6 @@ def pop_to_conc(pop_value, volume):
 if __name__ == '__main__':
 	#params = get_model_parameters('../examples/hnrnp_a1.csv')
 	params = get_model_parameters('../examples/zbp1_corr.csv')
-	#params = get_model_parameters('../examples/tdp-43.csv')
 	#params = get_model_parameters('../examples/N_4.csv')
 	#params = get_model_parameters('../examples/ptb.csv')
 	volume = params[5]
