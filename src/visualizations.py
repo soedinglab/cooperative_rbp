@@ -90,27 +90,35 @@ def example_overview():
 	"""Comparing the calculated/simulated results of the examples to the experimental data."""
 	fig, ax = plt.subplots(1,1, figsize=(5,3))
 
-	individual_kd_1 = [1.5e-6, 20.4e-6, 49.3e-9,]
-	individual_kd_2 = [9e-7, 6.8e-6, 17000e-9]
-	exp_total_kd = [20e-9, 15.5e-9, 3.1e-9]
-	theoretical_total_kd = [1.77e-9, 46.9e-9, 0.239e-9]
+	#Data
+	individual_kd_1 = [2.0e-6, 20.4e-6, 2.1e-6]
+	individual_kd_1_error = [0.4e-6, 1.06e-6, 1.3e-6]
+	individual_kd_2 = [1.1e-6, 6.8e-6, 2e-6]
+	individual_kd_2_error = [0.13e-6, 0.14e-6, 1.3e-6]
 
-	ax.plot(range(1,4), individual_kd_1, 'o', color='C1', label = 'Individual domains (experimental)')
-	ax.plot(range(1,4), individual_kd_2, 'o', color='C1')
-	ax.plot(range(1,4), exp_total_kd, '^', color='b', label = r'Total $K_\text{d}$ (experimental)')
-	ax.plot(range(1,4), theoretical_total_kd, 's', color='r', label = r'Total $K_\text{d}$ (calculated)')
+	exp_total_kd = [13e-9, 15.5e-9, 10e-9]
+	exp_total_kd_error = [1e-9, 0.0034e-6, 3e-9]
+	theoretical_total_kd = [2.4e-9, 17e-9, 7.1e-9]
+	theoretical_total_kd_error = [0.2e-9, 0.2e-9, 0.2e-9]
+
+	example_count = 3
+
+	ax.errorbar(range(1, example_count+1), individual_kd_1, yerr=individual_kd_1_error, marker='o', linestyle='', color='C1', label = 'Individual domains (experimental)', barsabove=True, ecolor='black', capsize=2)
+	ax.errorbar(range(1, example_count+1), individual_kd_2, individual_kd_2_error, marker='o', linestyle='', color='C1', barsabove=True, ecolor='black', capsize=2)
+	ax.errorbar(range(1, example_count+1), exp_total_kd, exp_total_kd_error, marker='^', linestyle='', color='b', label = r'Total $K_\text{d}$ (experimental)', barsabove=True, ecolor='black', capsize=2)
+	ax.errorbar(range(1, example_count+1), theoretical_total_kd, theoretical_total_kd_error, marker='s', linestyle='', color='r', label = r'Total $K_\text{d}$ (calculated)', barsabove=True, ecolor='black', capsize=2)
 
 	ax.set_ylim(1e-10, 1e-4)
 	ax.set_yscale('log')
 	ax.set_ylabel(r'$K_\text{d}$ [\si{M}]')
 	#ax.set_xlabel()
 	ax.set_xticks(range(1,4))
-	ax.set_xticklabels(['ZBP1', 'hnRNP A1', 'TDP-43'])
+	ax.set_xticklabels(['ZBP1', 'hnRNP A1', 'PTB34'])
 	ax.spines['top'].set_visible(False)
 	ax.spines['right'].set_visible(False)
 	ax.legend(fontsize = 'x-small', loc = 'best')
 	fig.tight_layout()
-	fig.savefig('../fig/example_overview.pdf', bbox_inches = 'tight')
+	#fig.savefig('../fig/example_overview.pdf', bbox_inches = 'tight')
 	plt.show()
 
 
@@ -177,6 +185,6 @@ if __name__ == '__main__':
 	#compare_N()
 	#N_4_trajectory()
 	#N_4_trajectory_detail()
-	#example_overview()
-	rbd_distribution()
+	example_overview()
+	#rbd_distribution()
 	pass
