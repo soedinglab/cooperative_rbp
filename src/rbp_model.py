@@ -130,6 +130,39 @@ class nxn(gillespy.Model):
 		sig_sq = (2/3)*self.lp*L + (2/3)*self.lp_p*L_p
 		return((1/((2*constants.pi*sig_sq)**(3/2))) * ((np.exp(-(1/(2*sig_sq))*(R1-R2)**2) - np.exp(-(1/(2*sig_sq))*(R1+R2)**2)) / (2*R1*R2/sig_sq)))
 
+	def get_concentration(self, domain1, domain2):
+		"""Return the concentration of domain2 at binding site 2 if domain1 is already bound at site 1 and for symmetrie reasons also vice versa.
+		INPUT
+			domain1,2 - int - index of the binding domains, zero based index
+		"""
+		L_tot = 0
+		d = 0
+		L_p_tot = 0
+		R1 = 0
+		R2 = 0
+		c_eff = 0
+
+		L_tot = sum(self.L[domain1:domain2])
+		if domain2 - domain1 == 1:
+			L_p_tot = self.L_p[domain1]
+		else:
+			L_p_tot = sum(self.L_p[domain1:domain2]) + trace(self.d[domain1:domain2, domain1:domain2])
+
+		if L_p_tot == 0:
+			d = self.d[domain1, domain2]
+			sig_sq = (2/3) * self.lp * L_tot
+			c_eff = self.gauss_chain(d, 0, sig_sq) * 10**(-3) / constants.N_A
+		elif L_p_tot !=0:
+			if self.L_p[domain1] == 0  or self.L_p[domain2-1] == 0:
+				R1 = self.d[domain1, domain2]
+				R2 = self.d[domain2, domain1]
+			else:
+				R1 = self.d[domain1, domain1 + 1]
+				R2 = self.d[domain2, domain2 - 1]
+			c_eff = self.flex_peptide_chain(R1, R2, L_tot, L_p_tot)* 10**(-3) / constants.N_A)
+
+		return c_eff
+
 
 	def create_reactions(self):
 		"""
@@ -456,7 +489,7 @@ def get_model_parameters(model_file):
 
 
 
-def init_run_model(params, labels=False, num_trajectories=1, avg=True):
+def init_run_print_model(parameter_file, labels=False, num_trajectories=1, avg=True, simulate=True):
 	"""
 	Creates an instance of the model, runs the simulation and returns the results.
 	INPUT
@@ -468,13 +501,23 @@ def init_run_model(params, labels=False, num_trajectories=1, avg=True):
 		list - (time, species counts, species names)
 	"""
 	
+	params = get_model_parameters(parameter_file)
+	volume = params[5]
 	model = nxn(*params)
-	print(model.analytical_kd())
+	analytical_kd_result = model.analytical_kd()
+	print('Total Kd based on the result from analytical calculations: ', analytical_kd_result)
 	results = model.run(show_labels=labels, number_of_trajectories=num_trajectories)
 	if avg and num_trajectories > 1:
-		return (results[0][:,0], np.average(np.dstack(results)[:,1:], axis = 2), model.species_names)
+		trajectories = results[0][:,0], np.average(np.dstack(results)[:,1:], axis = 2), model.species_names
 	elif not avg or num_trajectories == 1:
-		return (results[0][:,0], results[0][:,1:], model.species_names)
+		trajectories = results[0][:,0], results[0][:,1:], model.species_names
+
+	#print Kd value based on concentrations at the end of the simulation
+	print('Total Kd based on the result from analytical calculations: ', ((np.mean(pop_to_conc(trajectories[1][-20:-1,0], volume)) * np.mean(pop_to_conc(trajectories[1][-20:-1,1], volume))) / (np.mean(pop_to_conc(np.sum(trajectories[1][-20:-1,2:], axis=1), volume)))))
+
+	print('Error: ', model.error_2(analytical_kd_result, 1.3e-6, 1.3e-6))
+
+	plot_trajectories(*trajectories)
 
 
 
@@ -516,29 +559,5 @@ def pop_to_conc(pop_value, volume):
 
 
 if __name__ == '__main__':
-	#params = get_model_parameters('../examples/hnrnp_a1.csv')
-	params = get_model_parameters('../examples/zbp1_corr.csv')
-	#params = get_model_parameters('../examples/N_4.csv')
-	#params = get_model_parameters('../examples/ptb.csv')
-	volume = params[5]
-
-
-
-
-	#model = nxn(*params)
-	#kd=model.analytical_kd()
-	#print(kd)
-
-
-	#print(model.error_2(kd, 0.4e-6, 0.13e-6))
-
-
-
-
-	trajectories = init_run_model(params, num_trajectories = 10)
-#print Kd value based on concentrations at the end of the simulation
-	print((np.mean(pop_to_conc(trajectories[1][-20:-1,0], volume)) * np.mean(pop_to_conc(trajectories[1][-20:-1,1], volume))) / (np.mean(pop_to_conc(np.sum(trajectories[1][-20:-1,2:], axis=1), volume))))
-
-	plot_trajectories(*trajectories)
-
+	init_run_print_model('../examples/zbp1_itc.csv', num_trajectories = 10)
 
