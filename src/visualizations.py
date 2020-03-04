@@ -91,29 +91,36 @@ def example_overview():
 	fig, ax = plt.subplots(1,1, figsize=(5,3))
 
 	#Data
-	individual_kd_1 = [2.0e-6, 20.4e-6, 2.1e-6]
-	individual_kd_1_error = [0.4e-6, 1.06e-6, 1.3e-6]
-	individual_kd_2 = [1.1e-6, 6.8e-6, 2e-6]
-	individual_kd_2_error = [0.13e-6, 0.14e-6, 1.3e-6]
+	individual_kd_1 = [2.0e-6, 20.4e-6, 2.1e-6, 118.1e-9, np.nan]
+	individual_kd_1_error = [0.4e-6, 1.06e-6, 1.3e-6, 9.8e-9, np.nan]
 
-	exp_total_kd = [13e-9, 15.5e-9, 10e-9]
-	exp_total_kd_error = [1e-9, 0.0034e-6, 3e-9]
-	theoretical_total_kd = [2.4e-9, 17e-9, 7.1e-9]
-	theoretical_total_kd_error = [0.2e-9, 0.2e-9, 0.2e-9]
+	individual_kd_2 = [1.1e-6, 6.8e-6, 2e-6, 1.07e-4, np.nan]
+	individual_kd_2_error = [0.13e-6, 0.14e-6, 1.3e-6, np.nan, np.nan]
 
-	example_count = 3
+	individual_kd_3 = [np.nan, np.nan, np.nan, 4.32e-4, np.nan]
+	individual_kd_3_error = [np.nan, np.nan, np.nan, np.nan, np.nan]
 
-	ax.errorbar(range(1, example_count+1), individual_kd_1, yerr=individual_kd_1_error, marker='o', linestyle='', color='C1', label = 'Individual domains (experimental)', barsabove=True, ecolor='black', capsize=2)
-	ax.errorbar(range(1, example_count+1), individual_kd_2, individual_kd_2_error, marker='o', linestyle='', color='C1', barsabove=True, ecolor='black', capsize=2)
-	ax.errorbar(range(1, example_count+1), exp_total_kd, exp_total_kd_error, marker='^', linestyle='', color='b', label = r'Total $K_\text{d}$ (experimental)', barsabove=True, ecolor='black', capsize=2)
-	ax.errorbar(range(1, example_count+1), theoretical_total_kd, theoretical_total_kd_error, marker='s', linestyle='', color='r', label = r'Total $K_\text{d}$ (calculated)', barsabove=True, ecolor='black', capsize=2)
+	exp_total_kd = [13e-9, 15.5e-9, 10e-9, 3.5e-9, np.nan]
+	exp_total_kd_error = [1e-9, 0.0034e-6, 3e-9, 0.7e-9, np.nan]
+	theoretical_total_kd = [2.4e-9, 17e-9, 7.1e-9, 1.4e-8, np.nan]
+	theoretical_total_kd_error = [0.2e-9, 0.2e-9, 0.2e-9, np.nan, np.nan]
 
-	ax.set_ylim(1e-10, 1e-4)
+	example_count = 5
+
+	default_style = {"markersize":5, "linestyle":'', "barsabove":True, "ecolor":'black', "capsize":2}
+
+	ax.errorbar(range(1, example_count+1), individual_kd_1, yerr=individual_kd_1_error, marker='o', color='C1', label = 'Individual domains (experimental)', **default_style)
+	ax.errorbar(range(1, example_count+1), individual_kd_2, individual_kd_2_error, marker='o', color='C1', **default_style)
+	ax.errorbar(range(1, example_count+1), individual_kd_3, individual_kd_3_error, marker='o', color='C1', **default_style)
+	ax.errorbar(range(1, example_count+1), exp_total_kd, exp_total_kd_error, marker='^', color='b', label = r'Total $K_\text{d}$ (experimental)', **default_style)
+	ax.errorbar(range(1, example_count+1), theoretical_total_kd, theoretical_total_kd_error, marker='s', color='r', label = r'Total $K_\text{d}$ (calculated)', **default_style)
+
+	ax.set_ylim(1e-10, 1e-3)
 	ax.set_yscale('log')
 	ax.set_ylabel(r'$K_\text{d}$ [\si{M}]')
 	#ax.set_xlabel()
-	ax.set_xticks(range(1,4))
-	ax.set_xticklabels(['ZBP1', 'hnRNP A1', 'PTB34'])
+	ax.set_xticks(range(1,6))
+	ax.set_xticklabels(['ZBP1', 'hnRNP A1', 'PTB34', 'IMP3', 'IMP3 - KH1-4'])
 	ax.spines['top'].set_visible(False)
 	ax.spines['right'].set_visible(False)
 	ax.legend(fontsize = 'x-small', loc = 'best')

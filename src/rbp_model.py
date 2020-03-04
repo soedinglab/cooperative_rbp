@@ -123,6 +123,16 @@ class nxn(gillespy.Model):
 		self.timespan(np.linspace(0,time[0],time[1]))
 
 
+	def run(self, labels, num_trajectories):
+		"""Overrides the run method from the parent class. May print a warning and then runs the original method.
+		"""
+		#Print warning for proteins with a flexible linker between binding domains and more than two binding sites. This can not be done easily in the simulation. The analytical result can be used instead.
+		if self.simulation_warning == True:
+			print('Please note, that simulations cannot be done with proteins containing a flexible linker between binding domains and more than two binding sites. Please use the function analytical_kd to estimate the total kd based on our analytical result.')
+		return super().run(show_labels=labels, number_of_trajectories=num_trajectories)
+
+
+
 	def gauss_chain(self, x, mu, sig_sq):
 		return ((1/(2*constants.pi*sig_sq))**(3/2)*np.exp(-((x-mu)**2)/(2*sig_sq))) #radial distribution function of a worm like chain in the gaussian limit
 
@@ -143,23 +153,16 @@ class nxn(gillespy.Model):
 		c_eff = 0
 
 		L_tot = sum(self.L[domain1:domain2])
-		if domain2 - domain1 == 1:
-			L_p_tot = self.L_p[domain1]
-		else:
-			L_p_tot = sum(self.L_p[domain1:domain2]) + trace(self.d[domain1:domain2, domain1:domain2])
+		L_p_tot = sum(self.L_p[domain1:domain2]) + np.trace(self.d[domain1+1:domain2, domain1+1:domain2])
 
 		if L_p_tot == 0:
 			d = self.d[domain1, domain2]
 			sig_sq = (2/3) * self.lp * L_tot
 			c_eff = self.gauss_chain(d, 0, sig_sq) * 10**(-3) / constants.N_A
 		elif L_p_tot !=0:
-			if self.L_p[domain1] == 0  or self.L_p[domain2-1] == 0:
-				R1 = self.d[domain1, domain2]
-				R2 = self.d[domain2, domain1]
-			else:
-				R1 = self.d[domain1, domain1 + 1]
-				R2 = self.d[domain2, domain2 - 1]
-			c_eff = self.flex_peptide_chain(R1, R2, L_tot, L_p_tot)* 10**(-3) / constants.N_A)
+			R1 = self.d[domain1, domain2]
+			R2 = self.d[domain2, domain1]
+			c_eff = self.flex_peptide_chain(R1, R2, L_tot, L_p_tot)* 10**(-3) / constants.N_A
 
 		return c_eff
 
@@ -170,7 +173,7 @@ class nxn(gillespy.Model):
 		"""
 
 		reactions = []
-		simulation_warning = False
+		self.simulation_warning = False
 
 		#loop all species
 		for s in self.species_names: 
@@ -186,7 +189,7 @@ class nxn(gillespy.Model):
 
 				# Print warning at the end of initialization for proteins with a flexible linker between binding domains and more than two binding sites. This can not be done easily in the simulation. The analytical result can be used instead.
 				if np.sum(self.L_p) != 0:
-					simulation_warning = True
+					self.simulation_warning = True
 
 
 				#determine the product of reaction, first as string, then the species object
@@ -336,10 +339,6 @@ class nxn(gillespy.Model):
 							rate=self.off_stoch[reac_id]))
 
 
-		#Print warning for proteins with a flexible linker between binding domains and more than two binding sites. This can not be done easily in the simulation. The analytical result can be used instead.
-		if simulation_warning == True:
-			print('Please note, that simulations cannot be done with proteins containing a flexible linker between binding domains and more than two binding sites. Please use the function analytical_kd to estimate the total kd based on our analytical result.')
-
 		return reactions
 
 	
@@ -362,16 +361,8 @@ class nxn(gillespy.Model):
 				if elem == '1':
 					bound_sites.append(ind)
 					if not np.isnan(prev_ind): # find pairs of bound sites, then we to calculate c_eff
-						L_tot = sum(self.L[prev_ind:ind])
-						L_p_tot = sum(self.L_p[prev_ind:ind]) # TODO: this is not super exact
-						if L_p_tot == 0:
-							d = self.d[prev_ind, ind]
-							sig_sq = (2/3) * self.lp * L_tot
-							c_eff.append(self.gauss_chain(d, 0, sig_sq) * 10**(-3) / constants.N_A)
-						elif L_p_tot !=0:
-							R1 = self.d[prev_ind, prev_ind + 1] # TODO: this is not super exact
-							R2 = self.d[ind, ind - 1] # TODO: this is not super exact
-							c_eff.append(self.flex_peptide_chain(R1, R2, L_tot, L_p_tot)* 10**(-3) / constants.N_A)
+						c_eff.append(self.get_concentration(prev_ind, ind))
+
 					prev_ind = ind
 
 			kd += np.prod(np.array(self.on)[bound_sites]) * np.prod(np.array(c_eff))
@@ -506,14 +497,14 @@ def init_run_print_model(parameter_file, labels=False, num_trajectories=1, avg=T
 	model = nxn(*params)
 	analytical_kd_result = model.analytical_kd()
 	print('Total Kd based on the result from analytical calculations: ', analytical_kd_result)
-	results = model.run(show_labels=labels, number_of_trajectories=num_trajectories)
+	results = model.run(labels, num_trajectories)
 	if avg and num_trajectories > 1:
 		trajectories = results[0][:,0], np.average(np.dstack(results)[:,1:], axis = 2), model.species_names
 	elif not avg or num_trajectories == 1:
 		trajectories = results[0][:,0], results[0][:,1:], model.species_names
 
 	#print Kd value based on concentrations at the end of the simulation
-	print('Total Kd based on the result from analytical calculations: ', ((np.mean(pop_to_conc(trajectories[1][-20:-1,0], volume)) * np.mean(pop_to_conc(trajectories[1][-20:-1,1], volume))) / (np.mean(pop_to_conc(np.sum(trajectories[1][-20:-1,2:], axis=1), volume)))))
+	print('Total Kd based on the result from the simulation: ', ((np.mean(pop_to_conc(trajectories[1][-20:-1,0], volume)) * np.mean(pop_to_conc(trajectories[1][-20:-1,1], volume))) / (np.mean(pop_to_conc(np.sum(trajectories[1][-20:-1,2:], axis=1), volume)))))
 
 	print('Error: ', model.error_2(analytical_kd_result, 1.3e-6, 1.3e-6))
 
@@ -559,5 +550,5 @@ def pop_to_conc(pop_value, volume):
 
 
 if __name__ == '__main__':
-	init_run_print_model('../examples/zbp1_itc.csv', num_trajectories = 10)
+	init_run_print_model('../examples/imp3.csv', num_trajectories = 10)
 
