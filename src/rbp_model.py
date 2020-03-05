@@ -152,7 +152,7 @@ class nxn(gillespy.Model):
 		R2 = 0
 		c_eff = 0
 
-		L_tot = sum(self.L[domain1:domain2])
+		L_tot = sum(self.L[domain1*2:(domain2*2-1)])
 		L_p_tot = sum(self.L_p[domain1:domain2]) + np.trace(self.d[domain1+1:domain2, domain1+1:domain2])
 
 		if L_p_tot == 0:
