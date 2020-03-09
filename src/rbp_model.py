@@ -266,6 +266,7 @@ class nxn(gillespy.Model):
 							L_p_tot = sum(self.L_p[reac_id:(bound_neighbour)])
 
 
+						#TODO: use the concentration getter function
 						#add gaussian chain distr as parameter
 						sig_sq = (2/3) * self.lp * L_tot
 						self.add_parameter(gillespy.Parameter(
@@ -315,6 +316,7 @@ class nxn(gillespy.Model):
 						r_d_tot = self.d[r_bound_neighbour, reac_id]
 						r_L_tot = sum(self.L[reac_id*2-1:r_bound_neighbour*2])
 
+						#TODO: use concentration getter function
 						#add gaussian chain distr as parameter
 						sig_sq_l = (2/3) * self.lp * l_L_tot
 						sig_sq_r = (2/3) * self.lp * r_L_tot
