@@ -258,11 +258,11 @@ class nxn(gillespy.Model):
 						L_p_tot = np.nan #Protein linker
 						if bound_neighbour < reac_id:
 							d_tot = self.d[bound_neighbour, reac_id]
-							L_tot = sum(self.L[bound_neighbour:(reac_id)])
+							L_tot = sum(self.L[bound_neighbour*2:(reac_id*2-1)])
 							L_p_tot = sum(self.L_p[bound_neighbour:(reac_id)])
 						elif bound_neighbour > reac_id:
 							d_tot = self.d[bound_neighbour, reac_id]
-							L_tot = sum(self.L[reac_id:(bound_neighbour)])
+							L_tot = sum(self.L[reac_id*2:(bound_neighbour*2-1)])
 							L_p_tot = sum(self.L_p[reac_id:(bound_neighbour)])
 
 
@@ -310,10 +310,10 @@ class nxn(gillespy.Model):
 						r_L_tot = np.nan
 
 						l_d_tot = self.d[l_bound_neighbour, reac_id]
-						l_L_tot = sum(self.L[l_bound_neighbour:reac_id])
+						l_L_tot = sum(self.L[l_bound_neighbour*2:reac_id*2])
 
 						r_d_tot = self.d[r_bound_neighbour, reac_id]
-						r_L_tot = sum(self.L[reac_id:r_bound_neighbour])
+						r_L_tot = sum(self.L[reac_id*2-1:r_bound_neighbour*2])
 
 						#add gaussian chain distr as parameter
 						sig_sq_l = (2/3) * self.lp * l_L_tot
