@@ -23,7 +23,7 @@ lp_err = 0.6e-9
 lpb = 5.5e-10
 lpb_err = 0.9e-10
 
-# protein chain flexibility parameters in Zhou, 2003
+# protein chain flexibility parameters in Zhou, 2001
 # persistence length protein
 lp_p = 3.04e-10
 
@@ -128,7 +128,7 @@ class nxn(gillespy.Model):
 		"""
 		#Print warning for proteins with a flexible linker between binding domains and more than two binding sites. This can not be done easily in the simulation. The analytical result can be used instead.
 		if self.simulation_warning == True:
-			print('Please note, that simulations cannot be done with proteins containing a flexible linker between binding domains and more than two binding sites. Please use the function analytical_kd to estimate the total kd based on our analytical result.')
+			print('Please note, that simulations are not implemented for proteins containing a flexible linker between binding domains and more than two binding sites. Please use the function analytical_kd to estimate the total kd based on our analytical result.')
 		return super().run(show_labels=labels, number_of_trajectories=num_trajectories)
 
 
@@ -152,8 +152,14 @@ class nxn(gillespy.Model):
 		R2 = 0
 		c_eff = 0
 
-		L_tot = sum(self.L[domain1*2:(domain2*2-1)])
-		L_p_tot = sum(self.L_p[domain1:domain2]) + np.trace(self.d[domain1+1:domain2, domain1+1:domain2])
+		#Ensure domain1<domain2 and exchange the order if not, the c_eff equations are symmetric so we are allowed to do this
+		if domain1 > domain2:
+			tmp = domain1
+			domain1 = domain2
+			domain2 = tmp
+
+		L_tot = sum(self.L[domain1*2:(domain2*2-1)]) #RNA linker length
+		L_p_tot = sum(self.L_p[domain1:domain2]) + np.trace(self.d[domain1+1:domain2, domain1+1:domain2]) #Protein linker length
 
 		if L_p_tot == 0:
 			d = self.d[domain1, domain2]
@@ -188,7 +194,7 @@ class nxn(gillespy.Model):
 			for pos_reac_ind, reac_id in enumerate(pos_reac):
 
 				# Print warning at the end of initialization for proteins with a flexible linker between binding domains and more than two binding sites. This can not be done easily in the simulation. The analytical result can be used instead.
-				if np.sum(self.L_p) != 0:
+				if np.sum(self.L_p) != 0 and self.n > 2:
 					self.simulation_warning = True
 
 
@@ -252,26 +258,12 @@ class nxn(gillespy.Model):
 							elif r <= (len(s)-1) and int(s[r]) == 1:
 								bound_neighbour = r
 
-						#total distance between binding sites along RNA chain (L_tot) and between binding domains of the protein (d_tot)
-						d_tot = np.nan
-						L_tot = np.nan #RNA chain
-						L_p_tot = np.nan #Protein linker
-						if bound_neighbour < reac_id:
-							d_tot = self.d[bound_neighbour, reac_id]
-							L_tot = sum(self.L[bound_neighbour*2:(reac_id*2-1)])
-							L_p_tot = sum(self.L_p[bound_neighbour:(reac_id)])
-						elif bound_neighbour > reac_id:
-							d_tot = self.d[bound_neighbour, reac_id]
-							L_tot = sum(self.L[reac_id*2:(bound_neighbour*2-1)])
-							L_p_tot = sum(self.L_p[reac_id:(bound_neighbour)])
 
-
-						#TODO: use the concentration getter function
 						#add gaussian chain distr as parameter
-						sig_sq = (2/3) * self.lp * L_tot
+						c_eff = self.get_concentration(reac_id, bound_neighbour)
 						self.add_parameter(gillespy.Parameter(
 							name="chain_distr"+ str(len(reactions)+1),
-							expression=((self.gauss_chain(d_tot, 0, sig_sq)*10**(-3))/constants.N_A)))
+							expression=(c_eff)))
 
 						#forward reaction, propensity function (example for 01 -> 11): [01]*on_stoch_1_uni*chain_distr
 						reactions.append(gillespy.Reaction(
@@ -316,7 +308,6 @@ class nxn(gillespy.Model):
 						r_d_tot = self.d[r_bound_neighbour, reac_id]
 						r_L_tot = sum(self.L[reac_id*2-1:r_bound_neighbour*2])
 
-						#TODO: use concentration getter function
 						#add gaussian chain distr as parameter
 						sig_sq_l = (2/3) * self.lp * l_L_tot
 						sig_sq_r = (2/3) * self.lp * r_L_tot
@@ -552,5 +543,6 @@ def pop_to_conc(pop_value, volume):
 
 
 if __name__ == '__main__':
-	init_run_print_model('../examples/imp3.csv', num_trajectories = 10)
+	init_run_print_model('../examples/imp3_1234.csv', num_trajectories = 10)
+
 
