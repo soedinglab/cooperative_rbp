@@ -158,15 +158,19 @@ def rbd_distribution():
 		if i > max_value:
 			max_value = i
 
+	no_bins = 7
 	#new array size max_value
-	domain_count = np.zeros(max_value+1)
+	domain_count = np.zeros(no_bins+1) #+1 because of bin with 0 domains
 
 	counter = 0
 	# count number of domains, only if species == 'Homo sapiens'
 	for ind, elem in enumerate(domains):
 		#if species[ind] == 'Homo sapiens':
 		counter += 1
-		domain_count[elem] += 1
+		if elem < 7:
+			domain_count[elem] += 1
+		else:
+			domain_count[-1] += 1
 
 
 	#plot data
@@ -175,7 +179,8 @@ def rbd_distribution():
 	ax.bar(range(1, len(domain_count)), domain_count[1:], width = 0.4)
 
 	ax.set_xticks(range(1, len(domain_count)))
-	ax.set_ylabel(r'Proteins')
+	ax.set_xticklabels([1, 2, 3, 4, 5, 6, '7+'])
+	ax.set_ylabel(r'RBPs')
 	ax.set_xlabel(r'Domains')
 	ax.spines['top'].set_visible(False)
 	ax.spines['right'].set_visible(False)
@@ -185,9 +190,9 @@ def rbd_distribution():
 
 
 if __name__ == '__main__':
-	compare_N()
+	#compare_N()
 	#N_4_trajectory()
 	#N_4_trajectory_detail()
-	example_overview()
+	#example_overview()
 	rbd_distribution()
 	pass
