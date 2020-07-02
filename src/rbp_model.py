@@ -381,10 +381,14 @@ class nxn(gillespy.Model):
 			sig_sq = (2/3) * self.lp * self.L[0]
 			sig_sq_err = math.sqrt(((2/3) * lpb * L_bases * self.lp_err)**2 + ((2/3) * self.lp * lpb_err)**2)
 			c_12 = (self.gauss_chain(self.d[0,1], 0, sig_sq)*10**(-3))/constants.N_A
-			c_12_err = math.sqrt((c_12 * ((-2/(3 * sig_sq**(1/2))) + (self.d[0,1]**2)/(2*sig_sq**2)) * sig_sq_err)**2)
-		else: # TODO: Implement error for proteins with flexbile linker
-			print("Error for proteins with flexible linker not implementet yet. Returning 0 instead.")
-			return 0
+			c_12_err = math.sqrt((c_12 * ((-2/(3 * sig_sq)) + (self.d[0,1]**2)/(2*sig_sq**2)) * sig_sq_err)**2)
+		else:
+			L_bases = self.L[0] / lpb
+			L_amino_acids = self.L_p[0] / lpaa
+			sig_sq = ((2/3)*self.lp*self.L[0]) + ((2/3)*self.lp_p*self.L_p[0])
+			sig_sq_err = math.sqrt(((2/3) * lpb * L_bases * self.lp_err)**2 + ((2/3) * self.lp * L_bases * lpb_err)**2)
+			c_12 = self.get_concentration(0,1)
+			c_12_err = math.sqrt(((sig_sq/(2*self.d[0,1]*self.d[1,0]*(2*constants.pi*sig_sq)**(3/2))) * (np.exp((-1/(2*sig_sq)) * (self.d[0,1]-self.d[1,0])**2)*(((self.d[0,1]-self.d[1,0])/(2*sig_sq**2)) + (1/sig_sq) - (2/(3*sig_sq))) - np.exp((-1/(2*sig_sq)) * (self.d[0,1]+self.d[1,0])**2)*(((self.d[0,1]+self.d[1,0])/(2*sig_sq**2)) + (1/sig_sq) - (2/(3*sig_sq))))*10**(-3)/constants.N_A*sig_sq_err)**2)
 
 		k1 = self.on[0]**(-1)
 		k2 = self.on[1]**(-1)
@@ -473,7 +477,7 @@ def get_model_parameters(model_file):
 
 
 
-def init_run_print_model(parameter_file, labels=False, num_trajectories=1, avg=True, simulate=True):
+def init_run_print_model(parameter_file, labels=False, num_trajectories=1, avg=True, simulate=True, plot = True):
 	"""
 	Creates an instance of the model, runs the simulation and returns the results.
 	INPUT
@@ -491,17 +495,33 @@ def init_run_print_model(parameter_file, labels=False, num_trajectories=1, avg=T
 	analytical_kd_result = model.analytical_kd()
 	print('Total Kd based on the result from analytical calculations: ', analytical_kd_result)
 	results = model.run(labels, num_trajectories)
+
+	ordered_names = list(model.sanitized_species_names().keys())
+
 	if avg and num_trajectories > 1:
-		trajectories = results[0][:,0], np.average(np.dstack(results)[:,1:], axis = 2), model.species_names
+		trajectories = results[0][:,0], np.average(np.dstack(results)[:,1:], axis = 2), ordered_names
 	elif not avg or num_trajectories == 1:
-		trajectories = results[0][:,0], results[0][:,1:], model.species_names
+		trajectories = results[0][:,0], results[0][:,1:], ordered_names
+
+	#Gillespy2 (since version 1.3) changes the order of the species in the results array to be sorted by alphabet
+	#ẃe need to get the indices of rna, prot and the index range for all bound species
+	#list(model.sanitized_species_names().keys()).index('rna')
+
+	prot_ind = ordered_names.index('prot')
+	rna_ind = ordered_names.index('rna')
+	bound_low_ind = ordered_names.index('_' + model.species_names[1])
+	bound_high_ind = ordered_names.index('_' + model.species_names[-1])
+
 
 	#print Kd value based on concentrations at the end of the simulation
-	print('Total Kd based on the result from the simulation: ', ((np.mean(pop_to_conc(trajectories[1][-20:-1,0], volume)) * np.mean(pop_to_conc(trajectories[1][-20:-1,1], volume))) / (np.mean(pop_to_conc(np.sum(trajectories[1][-20:-1,2:], axis=1), volume)))))
+	print('Total Kd based on the result from the simulation: ', ((np.mean(pop_to_conc(trajectories[1][-20:-1,prot_ind], volume)) * np.mean(pop_to_conc(trajectories[1][-20:-1,rna_ind], volume))) / (np.mean(pop_to_conc(np.sum(trajectories[1][-20:-1,bound_low_ind:bound_high_ind+1], axis=1), volume)))))
 
-	print('Error: ', model.error_2(analytical_kd_result, 1.3e-6, 1.3e-6))
+	print('Error: ', model.error_2(analytical_kd_result, 2e-6, 2e-6))
 
-	plot_trajectories(*trajectories)
+	if plot:
+		plot_trajectories(*trajectories)
+	
+	return trajectories
 
 
 
@@ -513,9 +533,10 @@ def plot_trajectories(time, species, names):
 		species - np.array - results from simulation
 		names - list, str - species names
 	"""
-	names.insert(0, 'rna')
-	for i in range(species.shape[1]-1):
-		plt.plot(time, species[:,i+1], label=names[i+1])
+
+	for i in range(species.shape[1]):
+		if names[i] != 'prot':
+			plt.plot(time, species[:,i], label=names[i].replace('_',''))
 
 
 	plt.xlabel('Time')
@@ -545,4 +566,11 @@ def pop_to_conc(pop_value, volume):
 if __name__ == '__main__':
 	init_run_print_model('../examples/imp3_1234.csv', num_trajectories = 10)
 
+	#params = get_model_parameters('../examples/imp3_1234.csv')
+	#volume = params[5]
+	#model = nxn(*params)
+	#analytical_kd_result = model.analytical_kd()
+	#print('Total Kd based on the result from analytical calculations: ', analytical_kd_result)
+
+	#print('Error: ', model.error_2(analytical_kd_result, 2e-6, 2e-6))
 
