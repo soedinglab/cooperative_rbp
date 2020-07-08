@@ -31,7 +31,7 @@ def compare_N():
 
 	kd.insert(0, 1e-5)
 
-	ax.plot(range(1, 6), kd, linestyle='', marker='o')
+	ax.plot(range(1, 6), kd, linestyle='', marker='o', color='black')
 
 	ax.set_yscale('log')
 	ax.set_xticks(range(1,6))
@@ -49,8 +49,8 @@ def N_4_trajectory():
 	"""Creates a plot of the trajectory after the simulation with 4 binding sites."""
 	fig, ax = plt.subplots(1,1, figsize=(5,3))
 
-	params = rbp_model.get_model_parameters('../examples/N_4.csv')
-	trajectories = rbp_model.init_run_model(params, num_trajectories = 5)
+	params = rbp_model.get_model_parameters('../examples/N_3.csv')
+	trajectories = rbp_model.init_run_print_model('../examples/N_3.csv', num_trajectories = 5)
 	trajectories[2].insert(0, 'rna')
 	for i in range(trajectories[1].shape[1]-1):
 		ax.plot(trajectories[0], trajectories[1][:,i+1], label = trajectories[2][i+1], linewidth = 1)
@@ -61,7 +61,7 @@ def N_4_trajectory():
 	ax.spines['right'].set_visible(False)
 	ax.legend(ncol = 2)
 	fig.tight_layout()
-	fig.savefig('../fig/N_4_trajectory.pdf', bbox_inches = 'tight', dpi = 600)
+	fig.savefig('../fig/N_3_trajectory.pdf', bbox_inches = 'tight', dpi = 600)
 	#plt.show()
 
 
@@ -100,16 +100,26 @@ def example_overview():
 	exp_total_kd = [13e-9, 15.5e-9, 10e-9, 33.4e-9]
 	exp_total_kd_error = [1e-9, 0.0034e-6, 3e-9, 0.9e-9]
 	theoretical_total_kd = [2.4e-9, 17e-9, 7.1e-9, 1.3e-8]
-	theoretical_total_kd_error = [0, 0, 0, 0]
+	theoretical_total_kd_error = [1e-10, 6e-10, 9e-10, 0]
 
 	example_count = len(theoretical_total_kd)
 
-	default_style = {"markersize":5, "linestyle":'', "barsabove":True, "ecolor":'black', "capsize":2}
+	default_style = {"markersize":5, "linestyle":'', "barsabove":True, "ecolor":'black', "capsize":2, "elinewidth":1.5}
 
-	ax.errorbar(range(1, example_count+1), individual_kd_1, yerr=individual_kd_1_error, marker='o', color='C1', label = 'Individual domains (experimental)', **default_style)
-	ax.errorbar(range(1, example_count+1), individual_kd_2, individual_kd_2_error, marker='o', color='C1', **default_style)
-	ax.errorbar(range(1, example_count+1), exp_total_kd, exp_total_kd_error, marker='^', color='b', label = r'Total $K_\text{d}$ (experimental)', **default_style)
-	ax.errorbar(range(1, example_count+1), theoretical_total_kd, theoretical_total_kd_error, marker='s', color='r', label = r'Total $K_\text{d}$ (calculated)', **default_style)
+	#ax.errorbar(range(1, example_count+1), individual_kd_1, yerr=individual_kd_1_error, marker='o', color='C1', label = 'Individual domains (experimental)', **default_style)
+	#ax.errorbar(range(1, example_count+1), individual_kd_2, individual_kd_2_error, marker='o', color='C1', **default_style)
+	#ax.errorbar(range(1, example_count+1), exp_total_kd, exp_total_kd_error, marker='^', color='b', label = r'Total $K_\text{d}$ (experimental)', **default_style)
+	#ax.errorbar(range(1, example_count+1), theoretical_total_kd, theoretical_total_kd_error, marker='s', color='r', label = r'Total $K_\text{d}$ (calculated)', **default_style)
+
+	ax.plot(range(1, example_count+1), individual_kd_1, marker='o', color='C1', label = 'Individual domains (experimental)', linestyle='')
+	ax.plot(range(1, example_count+1), individual_kd_2, marker='o', color='C1', linestyle='')
+	ax.plot(range(1, example_count+1), exp_total_kd, marker='^', color='b', label = r'Total $K_\text{d}$ (experimental)', linestyle='')
+	ax.plot(range(1, example_count+1), theoretical_total_kd, marker='s', color='r', label = r'Total $K_\text{d}$ (calculated)', linestyle='')
+	
+
+
+
+
 
 	ax.set_ylim(1e-10, 1e-3)
 	ax.set_yscale('log')
@@ -121,8 +131,7 @@ def example_overview():
 	ax.spines['right'].set_visible(False)
 	ax.legend(fontsize = 'x-small', loc = 'best')
 	fig.tight_layout()
-	fig.savefig('../fig/example_overview.pdf', bbox_inches = 'tight', dpi = 600)
-	#plt.show()
+	fig.savefig('../fig/example_overview_no_error.pdf', bbox_inches = 'tight', dpi = 600)
 
 
 
@@ -176,7 +185,7 @@ def rbd_distribution():
 	#plot data
 	fig, ax = plt.subplots(1,1, figsize=(5,3))
 
-	ax.bar(range(1, len(domain_count)), domain_count[1:], width = 0.4)
+	ax.bar(range(1, len(domain_count)), domain_count[1:], width = 0.4, color='black')
 
 	ax.set_xticks(range(1, len(domain_count)))
 	ax.set_xticklabels([1, 2, 3, 4, 5, 6, '7+'])
@@ -193,6 +202,6 @@ if __name__ == '__main__':
 	#compare_N()
 	#N_4_trajectory()
 	#N_4_trajectory_detail()
-	#example_overview()
-	rbd_distribution()
+	example_overview()
+	#rbd_distribution()
 	pass
