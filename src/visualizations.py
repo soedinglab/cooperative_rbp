@@ -14,24 +14,34 @@ plt.rcParams['font.serif'] = ['Latin Modern Roman']
 #plt.rcParams['pgf.rcfonts'] = False
 #plt.rcParams['pgf.preamble'] = ['\\usepackage{lmodern} \\usepackage{siunitx}']
 
+import matplotlib.colors as colors
+
 import numpy as np
 
 import rbp_model
 
 
 def compare_N():
-	"""Creates a barplot to compare the total Kd for different N, using arbitrary distances and binding constants."""
+	"""Creates a plot to compare the total Kd for different N, using arbitrary distances and binding constants."""
 	fig, ax = plt.subplots(1,1, figsize=(5,3))
 
+	N = 5
+	parameters = 3
 	kd = []
-	for i in range(2, 6):
-		params = rbp_model.get_model_parameters('../examples/N_' + str(i) + '.csv')
-		model = rbp_model.nxn(*params)
-		kd.append(model.analytical_kd())
+	kd_n1 = [1e-5, 1e-5, 1e-5]
+	for j in range(1, parameters + 1):
+		kd.append(kd_n1[j-1])
+		for i in range(2, N+1):
+			params = rbp_model.get_model_parameters('../examples/compare_N/' + str(j)  + '/N_' + str(i) + '.csv')
+			model = rbp_model.nxn(*params)
+			kd.append(model.analytical_kd())
 
-	kd.insert(0, 1e-5)
+	plot_colors = ['C1', 'b', 'r']
+	plot_markers = ['^', 'o', 's']
+	plot_labels = ['10nt', '20nt', '40nt']
 
-	ax.plot(range(1, 6), kd, linestyle='', marker='o', color='black')
+	for j in range(1, parameters + 1):
+		ax.plot(range(1, N+1), kd[((j-1)*N):(j*N)], linestyle='', marker=plot_markers[j-1], color=plot_colors[j-1], label=plot_labels[j-1])
 
 	ax.set_yscale('log')
 	ax.set_xticks(range(1,6))
@@ -39,10 +49,81 @@ def compare_N():
 	ax.set_xlabel(r'$N$')
 	ax.spines['top'].set_visible(False)
 	ax.spines['right'].set_visible(False)
+	ax.legend(title='RNA linker distance')
 	fig.tight_layout()
 	fig.savefig('../fig/compare_N.pdf', bbox_inches = 'tight', dpi = 600)
-	#plt.show()
+	plt.show()
 
+
+def k3_tot(k1, k2, k3):
+	params = rbp_model.get_model_parameters('../examples/compare_N//2/N_3.csv')
+	model = rbp_model.nxn(*params)
+	params[3][0] = 1/k1
+	params[3][1] = 1/k2
+	params[3][2] = 1/k3
+	return model.analytical_kd()
+	#call rbp_model.nxn.analytical but not with a parameter file
+
+def compare_kd():
+	"""Creates a plot to compare the total Kd for different kd of individual sites, using arbitrary distances and binding constants."""
+	fig, ax = plt.subplots(1,1, figsize=(5,3))
+
+	N = 6
+	parameters = 3
+	kd = []
+	for j in range(1, parameters + 1):
+		for i in range(1, N+1):
+			params = rbp_model.get_model_parameters('../examples/compare_kd/' + str(j)  + '/N_3_' + str(i) + '.csv')
+			model = rbp_model.nxn(*params)
+			kd.append(model.analytical_kd())
+
+	plot_colors = ['C1', 'b', 'r']
+	plot_markers = ['^', 'o', 's']
+	plot_labels = ['\SI{1e-5}{M}', '\SI{1e-4}{M}', '\SI{1e-3}{M}']
+
+	k2 = [1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 5e-1]
+
+	for j in range(1, parameters + 1):
+		ax.plot(k2, kd[((j-1)*N):(j*N)], linestyle='', marker=plot_markers[j-1], color=plot_colors[j-1], label=plot_labels[j-1])
+
+	ax.set_yscale('log')
+	ax.set_xscale('log')
+	ax.set_ylabel(r'$K_\text{d}$ [\si{M}]')
+	ax.set_xlabel(r'$K_2$ [\si{M}]')
+	ax.spines['top'].set_visible(False)
+	ax.spines['right'].set_visible(False)
+	ax.legend(title='$K_3$:')
+	fig.tight_layout()
+	fig.savefig('../fig/compare_kd.pdf', bbox_inches = 'tight', dpi = 600)
+	plt.show()
+
+
+def compare_kd_heat():
+	fig, ax = plt.subplots(1,1, figsize=(5,3))
+
+	k1 = 1e-5
+	x = np.logspace(-5, 0, 100)
+	y = np.logspace(-5, 0, 100)
+	z = np.zeros((x.shape[0], y.shape[0]))
+	for i, elem_i in enumerate(x):
+		for j, elem_j in enumerate(y):
+			z[i][j] = k3_tot(k1, elem_j, elem_i)
+
+	xg, yg = np.meshgrid(x,y)
+	heat_plot = ax.pcolormesh(x,y,z, norm = colors.LogNorm(vmin=z.min(), vmax=z.max()), cmap = 'jet_r', shading = 'gouraud')
+
+	clb = fig.colorbar(heat_plot)
+	clb.set_label(r'$K_\text{d, tot}$ [\si{M}]')
+	ax.set_yscale('log')
+	ax.set_xscale('log')
+	ax.set_ylabel(r'$K_2$ [\si{M}]')
+	ax.set_xlabel(r'$K_3$ [\si{M}]')
+	#ax.spines['top'].set_visible(False)
+	#ax.spines['right'].set_visible(False)
+	ax.set_aspect('equal')
+	fig.tight_layout()
+	fig.savefig('../fig/compare_kd_heat.pdf', bbox_inches = 'tight', dpi = 600)
+	plt.show()
 
 
 def N_4_trajectory():
@@ -118,9 +199,6 @@ def example_overview():
 	
 
 
-
-
-
 	ax.set_ylim(1e-10, 1e-3)
 	ax.set_yscale('log')
 	ax.set_ylabel(r'$K_\text{d}$ [\si{M}]')
@@ -131,7 +209,8 @@ def example_overview():
 	ax.spines['right'].set_visible(False)
 	ax.legend(fontsize = 'x-small', loc = 'best')
 	fig.tight_layout()
-	fig.savefig('../fig/example_overview_no_error.pdf', bbox_inches = 'tight', dpi = 600)
+	#fig.savefig('../fig/example_overview_no_error.pdf', bbox_inches = 'tight', dpi = 600)
+	plt.show()
 
 
 
@@ -167,32 +246,37 @@ def rbd_distribution():
 		if i > max_value:
 			max_value = i
 
+	species_names = np.array(['Homo sapiens', 'Mus musculus', 'Drosophila melanogaster', 'Caenorhabditis elegans'])
 	no_bins = 7
 	#new array size max_value
-	domain_count = np.zeros(no_bins+1) #+1 because of bin with 0 domains
+	domain_count = np.zeros((species_names.shape[0], no_bins+1)) #+1 because of bin with 0 domains
 
 	counter = 0
 	# count number of domains, only if species == 'Homo sapiens'
-	for ind, elem in enumerate(domains):
+	for ind_i, elem_i in enumerate(domains):
 		#if species[ind] == 'Homo sapiens':
-		counter += 1
-		if elem < 7:
-			domain_count[elem] += 1
-		else:
-			domain_count[-1] += 1
+		for ind_j, elem_j in enumerate(species_names):
+			if species[ind_i] == elem_j:
+				counter += 1
+				if elem_i < no_bins:
+					domain_count[ind_j, elem_i] += 1
+				else:
+					domain_count[ind_j, -1] += 1
 
 
 	#plot data
 	fig, ax = plt.subplots(1,1, figsize=(5,3))
 
-	ax.bar(range(1, len(domain_count)), domain_count[1:], width = 0.4, color='black')
+	for ind, elem in enumerate(domain_count):
+		ax.bar(range(1, len(elem)), elem[1:], bottom = np.sum(domain_count[:ind, 1:], axis=0), width = 0.4, label=species_names[ind])
 
-	ax.set_xticks(range(1, len(domain_count)))
+	ax.set_xticks(range(1, domain_count.shape[1]))
 	ax.set_xticklabels([1, 2, 3, 4, 5, 6, '7+'])
 	ax.set_ylabel(r'RBPs')
 	ax.set_xlabel(r'Domains')
 	ax.spines['top'].set_visible(False)
 	ax.spines['right'].set_visible(False)
+	ax.legend()
 	fig.tight_layout()
 	fig.savefig('../fig/rbp_distribution.pdf', bbox_inches = 'tight', dpi = 600)
 	#plt.show()
@@ -200,8 +284,10 @@ def rbd_distribution():
 
 if __name__ == '__main__':
 	#compare_N()
+	#compare_kd()
+	compare_kd_heat()
 	#N_4_trajectory()
 	#N_4_trajectory_detail()
-	example_overview()
+	#example_overview()
 	#rbd_distribution()
 	pass
