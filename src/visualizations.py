@@ -102,8 +102,8 @@ def compare_kd_heat():
 	fig, ax = plt.subplots(1,1, figsize=(5,3))
 
 	k1 = 1e-5
-	x = np.logspace(-5, 0, 100)
-	y = np.logspace(-5, 0, 100)
+	x = np.logspace(-5, -1, 100)
+	y = np.logspace(-5, -1, 100)
 	z = np.zeros((x.shape[0], y.shape[0]))
 	for i, elem_i in enumerate(x):
 		for j, elem_j in enumerate(y):
@@ -112,12 +112,17 @@ def compare_kd_heat():
 	xg, yg = np.meshgrid(x,y)
 	heat_plot = ax.pcolormesh(x,y,z, norm = colors.LogNorm(vmin=z.min(), vmax=z.max()), cmap = 'jet_r', shading = 'gouraud')
 
+	contour_lines = ax.contour(x,y,z, locator=mpl.ticker.LogLocator(subs=(1,)), linestyles='dashed', linewidths=0.5, colors='black')
+	fmt = mpl.ticker.LogFormatterMathtext()
+	fmt.create_dummy_axis()
+	ax.clabel(contour_lines, inline=False, inline_spacing=0, fmt=fmt, fontsize='smaller')
+
 	clb = fig.colorbar(heat_plot)
-	clb.set_label(r'$K_\text{d, tot}$ [\si{M}]')
+	clb.set_label(r'$K_\text{d, tot}(3)$ [\si{M}]')
 	ax.set_yscale('log')
 	ax.set_xscale('log')
-	ax.set_ylabel(r'$K_2$ [\si{M}]')
-	ax.set_xlabel(r'$K_3$ [\si{M}]')
+	ax.set_ylabel(r'$K_{\mathrm{d}2}$ [\si{M}]')
+	ax.set_xlabel(r'$K_{\mathrm{d}3}$ [\si{M}]')
 	#ax.spines['top'].set_visible(False)
 	#ax.spines['right'].set_visible(False)
 	ax.set_aspect('equal')
