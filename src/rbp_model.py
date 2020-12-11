@@ -504,7 +504,7 @@ def init_run_print_model(parameter_file, labels=False, num_trajectories=1, avg=T
 		trajectories = results[0][:,0], results[0][:,1:], ordered_names
 
 	#Gillespy2 (since version 1.3) changes the order of the species in the results array to be sorted by alphabet
-	#ẃe need to get the indices of rna, prot and the index range for all bound species
+	#we need to get the indices of rna, prot and the index range for all bound species
 	#list(model.sanitized_species_names().keys()).index('rna')
 
 	prot_ind = ordered_names.index('prot')

@@ -67,7 +67,7 @@ def kd_N():
 	plot_labels = ['10 nt', '20 nt', '40 nt']
 
 	for j in range(1, parameters + 1):
-		ax.plot(range(1, N+1), kd[((j-1)*N):(j*N)], linestyle='', marker=plot_markers[j-1], color=plot_colors[j-1], label=plot_labels[j-1])
+		ax.plot(range(1, N+1), kd[((j-1)*N):(j*N)], linestyle='-', marker=plot_markers[j-1], color=plot_colors[j-1], label=plot_labels[j-1])
 
 	ax.set_yscale('log')
 	ax.set_xticks(range(1,6))
@@ -78,7 +78,7 @@ def kd_N():
 	ax.legend(title='RNA linker distance')
 	fig.tight_layout()
 	fig.savefig('../fig/kd_N.pdf', bbox_inches = 'tight', dpi = 600)
-	#plt.show()
+	plt.show()
 
 
 def kd_tot_k3():
@@ -106,18 +106,19 @@ def kd_tot_k3():
 	plot_colors = plt.cm.Greens(np.linspace(0.5,1,3))
 	#plot_colors = ['C1', 'b', 'r']
 	plot_markers = ['^', 'o', 's']
-	plot_labels = ['\SI{1e-5}{M}', '\SI{1e-4}{M}', '\SI{1e-3}{M}']
+	plot_labels = ['\SI{e-5}{M}', '\SI{e-4}{M}', '\SI{e-3}{M}']
 
 
 	for j in range(1, parameters + 1):
-		ax.plot(k3, kd[((j-1)*N):(j*N)], linestyle='', marker=plot_markers[j-1], color=plot_colors[j-1], label=plot_labels[j-1])
+		ax.plot(k3, kd[((j-1)*N):(j*N)], linestyle='-', marker=plot_markers[j-1], color=plot_colors[j-1], label=plot_labels[j-1])
 
 
 	params = rbp_model.get_model_parameters('../examples/N_3.csv')
 	model = rbp_model.nxn(*params)
 	c_eff = model.get_concentration(1,2)
 
-	ax.vlines(c_eff, 1e-9, 1e-5, ls ='dashed', linewidth=1, label=r'$c_{d_2, L_2}$')
+	ax.vlines(c_eff, 1e-9, 1e-5, ls ='dashed', linewidth=1)
+	ax.text(c_eff- 4e-4, 1.2e-5, r'$c_{d_2, L_2}$')
 
 	ax.set_yscale('log')
 	ax.set_xscale('log')
@@ -210,24 +211,16 @@ def example_overview():
 
 	#Data
 	individual_kd_1 = [2.0e-6, 20.4e-6, 2.1e-6, 9e-6]
-	individual_kd_1_error = [0.4e-6, 1.06e-6, 1.3e-6, 2e-6]
 
 	individual_kd_2 = [1.1e-6, 6.8e-6, 2e-6, 4e-6]
-	individual_kd_2_error = [0.13e-6, 0.14e-6, 1.3e-6, 2e-6]
 
 	exp_total_kd = [13e-9, 15.5e-9, 10e-9, 33.4e-9]
-	exp_total_kd_error = [1e-9, 0.0034e-6, 3e-9, 0.9e-9]
 	theoretical_total_kd = [2.4e-9, 17e-9, 7.1e-9, 1.3e-8]
-	theoretical_total_kd_error = [1e-10, 6e-10, 9e-10, 0]
 
 	example_count = len(theoretical_total_kd)
 
 	default_style = {"markersize":5, "linestyle":'', "barsabove":True, "ecolor":'black', "capsize":2, "elinewidth":1.5}
 
-	#ax.errorbar(range(1, example_count+1), individual_kd_1, yerr=individual_kd_1_error, marker='o', color='C1', label = 'Individual domains (experimental)', **default_style)
-	#ax.errorbar(range(1, example_count+1), individual_kd_2, individual_kd_2_error, marker='o', color='C1', **default_style)
-	#ax.errorbar(range(1, example_count+1), exp_total_kd, exp_total_kd_error, marker='^', color='b', label = r'Total $K_\text{d}$ (experimental)', **default_style)
-	#ax.errorbar(range(1, example_count+1), theoretical_total_kd, theoretical_total_kd_error, marker='s', color='r', label = r'Total $K_\text{d}$ (calculated)', **default_style)
 
 	ax.plot(range(1, example_count+1), individual_kd_1, marker='^', color=plt.cm.tab20([18])[0], label = 'Individual domains (experimental)', linestyle='')
 	ax.plot(range(1, example_count+1), individual_kd_2, marker='^', color=plt.cm.tab20([18])[0], linestyle='')
@@ -241,7 +234,7 @@ def example_overview():
 	ax.set_ylabel(r'$K_\text{d}$ [\si{M}]')
 	#ax.set_xlabel()
 	ax.set_xticks(range(1,example_count+1))
-	ax.set_xticklabels(['ZBP1', 'hnRNP A1', 'PTB34', 'IMP3 - RRM12, KH12'])
+	ax.set_xticklabels(['ZBP1', 'hnRNP A1', 'PTB34', r'IMP3\\RRM12, KH12'])
 	ax.spines['top'].set_visible(False)
 	ax.spines['right'].set_visible(False)
 	ax.legend(fontsize = 'x-small', loc = 'best')
@@ -535,7 +528,7 @@ if __name__ == '__main__':
 	#kd_heat()
 	#N_4_trajectory()
 	#N_4_trajectory_detail()
-	#example_overview()
+	example_overview()
 	#rbd_distribution()
 	#kd_linker_length()
 	#kd_motif_density()
