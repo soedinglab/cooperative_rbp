@@ -363,64 +363,6 @@ class nxn(gillespy.Model):
 		return (kd**(-1))
 
 
-	def error_2(self, kd_tot, k1_err, k2_err):
-		"""Returns the error of the Kd for two binding sites.
-		INPUT
-			k1_err - float - error in the measurement of the kd of the first domain
-			k2_err - float - error in the measurement of the kd of the first domain
-
-		RETURN
-			Error of the Kd
-		"""
-		c_12 = 0
-		c_12_err = 0
-
-		#Does the protein have a flexible linker
-		if self.L_p[0] == 0:
-			L_bases = self.L[0] / lpb
-			sig_sq = (2/3) * self.lp * self.L[0]
-			sig_sq_err = math.sqrt(((2/3) * lpb * L_bases * self.lp_err)**2 + ((2/3) * self.lp * lpb_err)**2)
-			c_12 = (self.gauss_chain(self.d[0,1], 0, sig_sq)*10**(-3))/constants.N_A
-			c_12_err = math.sqrt((c_12 * ((-2/(3 * sig_sq)) + (self.d[0,1]**2)/(2*sig_sq**2)) * sig_sq_err)**2)
-		else:
-			L_bases = self.L[0] / lpb
-			L_amino_acids = self.L_p[0] / lpaa
-			sig_sq = ((2/3)*self.lp*self.L[0]) + ((2/3)*self.lp_p*self.L_p[0])
-			sig_sq_err = math.sqrt(((2/3) * lpb * L_bases * self.lp_err)**2 + ((2/3) * self.lp * L_bases * lpb_err)**2)
-			c_12 = self.get_concentration(0,1)
-			c_12_err = math.sqrt(((sig_sq/(2*self.d[0,1]*self.d[1,0]*(2*constants.pi*sig_sq)**(3/2))) * (np.exp((-1/(2*sig_sq)) * (self.d[0,1]-self.d[1,0])**2)*(((self.d[0,1]-self.d[1,0])/(2*sig_sq**2)) + (1/sig_sq) - (2/(3*sig_sq))) - np.exp((-1/(2*sig_sq)) * (self.d[0,1]+self.d[1,0])**2)*(((self.d[0,1]+self.d[1,0])/(2*sig_sq**2)) + (1/sig_sq) - (2/(3*sig_sq))))*10**(-3)/constants.N_A*sig_sq_err)**2)
-
-		k1 = self.on[0]**(-1)
-		k2 = self.on[1]**(-1)
-
-		return math.sqrt(k1_err**2 * kd_tot**4 * (-k1**-2 - (c_12/(k1**2 * k2))) + k2_err**2 * kd_tot**4 * (-k2**-2 - (c_12/(k2**2 * k1))) + c_12_err**2 * kd_tot**4 * (k1 * k2)**(-2))
-
-
-	def error_3(self, kd_tot, k1_err, k2_err, k3_err):
-		"""Returns the error of the Kd for three binding sites.
-		INPUT
-			k1_err - float - error in the measurement of the kd of the first domain
-			k2_err - float - error in the measurement of the kd of the first domain
-			k3_err - float - error in the measurement of the kd of the first domain
-
-		RETURN
-			Error of the Kd
-		"""
-
-
-	def error_4(self, kd_tot, k1_err, k2_err, k3_err, k4_err):
-		"""Returns the error of the Kd for four binding sites.
-		INPUT
-			k1_err - float - error in the measurement of the kd of the first domain
-			k2_err - float - error in the measurement of the kd of the first domain
-			k3_err - float - error in the measurement of the kd of the first domain
-			k4_err - float - error in the measurement of the kd of the first domain
-		
-		RETURN
-			Error of the Kd
-		"""
-
-
 
 def get_model_parameters(model_file):
 	"""
