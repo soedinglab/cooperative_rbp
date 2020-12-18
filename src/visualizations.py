@@ -528,12 +528,12 @@ if __name__ == '__main__':
 	#kd_heat()
 	#N_4_trajectory()
 	#N_4_trajectory_detail()
-	example_overview()
+	#example_overview()
 	#rbd_distribution()
 	#kd_linker_length()
 	#kd_motif_density()
 	#occupancy_linker_length()
-	#occupancy_motif_density()
+	occupancy_motif_density()
 
 
 	pass

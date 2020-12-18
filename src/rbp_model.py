@@ -35,9 +35,6 @@ class nxn(gillespy.Model):
 	Class for defining model parameters, species and reactions. Inherits from the model class of the gillespy library.
 	Methods (for external use):
 		analytical_kd - calculate the Kd based on the analytical solution
-		error_2 - returns the error of the Kd for two binding sites
-		error_3 - returns the error of the Kd for three binding sites
-		error_4 - returns the error of the Kd for four binding sites
 	"""
 
 	def __init__(self, n, prot0, rna0, on, off, volume, lp, d, L, L_p, lp_p, time):
@@ -458,7 +455,6 @@ def init_run_print_model(parameter_file, labels=False, num_trajectories=1, avg=T
 	#print Kd value based on concentrations at the end of the simulation
 	print('Total Kd based on the result from the simulation: ', ((np.mean(pop_to_conc(trajectories[1][-20:-1,prot_ind], volume)) * np.mean(pop_to_conc(trajectories[1][-20:-1,rna_ind], volume))) / (np.mean(pop_to_conc(np.sum(trajectories[1][-20:-1,bound_low_ind:bound_high_ind+1], axis=1), volume)))))
 
-	print('Error: ', model.error_2(analytical_kd_result, 2e-6, 2e-6))
 
 	if plot:
 		plot_trajectories(*trajectories)
@@ -514,5 +510,4 @@ if __name__ == '__main__':
 	#analytical_kd_result = model.analytical_kd()
 	#print('Total Kd based on the result from analytical calculations: ', analytical_kd_result)
 
-	#print('Error: ', model.error_2(analytical_kd_result, 2e-6, 2e-6))
 
