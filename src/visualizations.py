@@ -18,6 +18,7 @@ plt.rcParams['lines.markersize'] = 4
 import matplotlib.colors as colors
 
 import numpy as np
+import scipy.optimize
 
 from fractions import Fraction
 
@@ -391,6 +392,8 @@ def kd_motif_density():
 	ax.plot(motif_density, kd_3_density, linestyle='-', label='3', color=colors[2], marker='s')
 	ax.plot(motif_density, kd_4_density, linestyle='-', label='4', color=colors[3], marker='D')
 
+	ax.hlines(0.1e-6, (1/200), (1/3), ls='dashed', linewidth=1)
+
 	ax.set_xscale('log')
 	ax.set_yscale('log')
 	plt.xticks(motif_density, [str(Fraction(i).limit_denominator()) for i in motif_density])
@@ -478,15 +481,40 @@ def occupancy_motif_density():
 	occupancy_4.insert(0, (RNA_conc / (RNA_conc + kd_3[1]/2)))
 	occupancy_4.insert(0, (RNA_conc / (RNA_conc + kd_2[0]/3)))
 
-
 	colors = plt.cm.Purples(np.linspace(0.5,1,4))
+
+	####
+	# fit to hill curve
+	motif_density_small_steps = np.logspace(np.log2(1/200), np.log2(1/3), num=100, base=2)
+	guess = (1,1)
+	hill_param_1 = hill_fit(occupancy_1, motif_density, guess)
+	print('Parameters for fit to Hill function with 1 domain: ', hill_param_1)
+	hill_plot = plt.plot(motif_density_small_steps, hill_func(motif_density_small_steps, *hill_param_1[0]), color=colors[0])
+
+	guess = (1,1)
+	hill_param_2 = hill_fit(occupancy_2, motif_density, guess)
+	print('Parameters for fit to Hill function with 2 domains: ', hill_param_2)
+	hill_plot = plt.plot(motif_density_small_steps, hill_func(motif_density_small_steps, *hill_param_2[0]), color=colors[1])
+
+	guess = (0.001,2)
+	hill_param_3 = hill_fit(occupancy_3, motif_density, guess)
+	print('Parameters for fit to Hill function with 3 domains: ', hill_param_3)
+	hill_plot = plt.plot(motif_density_small_steps, hill_func(motif_density_small_steps, *hill_param_3[0]), color=colors[2])
 	
+	guess = (0.0001,3)
+	hill_param_4 = hill_fit(occupancy_4, motif_density, guess)
+	print('Parameters for fit to Hill function with 4 domains: ', hill_param_4)
+	hill_plot = plt.plot(motif_density_small_steps, hill_func(motif_density_small_steps, *hill_param_4[0]), color=colors[3])
+
+
 	#occupancy_1 = RNA_conc/(1e-5+RNA_conc)
 	#ax.hlines(occupancy_1, 0, 100, linestyles = 'dashed', linewidth = 1, label='1')
-	ax.plot(motif_density, occupancy_1, linestyle='-', label='1', color=colors[0], marker='^')
-	ax.plot(motif_density, occupancy_2, linestyle='-', label='2', color=colors[1], marker='o')
-	ax.plot(motif_density, occupancy_3, linestyle='-', label='3', color=colors[2], marker='s')
-	ax.plot(motif_density, occupancy_4, linestyle='-', label='4', color=colors[3], marker='D')
+	ax.plot(motif_density, occupancy_1, linestyle='', label='1', color=colors[0], marker='^')
+	ax.plot(motif_density, occupancy_2, linestyle='', label='2', color=colors[1], marker='o')
+	ax.plot(motif_density, occupancy_3, linestyle='', label='3', color=colors[2], marker='s')
+	ax.plot(motif_density, occupancy_4, linestyle='', label='4', color=colors[3], marker='D')
+
+	ax.hlines(0.5, (1/200), (1/3), ls='dashed', linewidth=1)
 
 	ax.set_xscale('log')
 	#ax.set_yscale('log')
@@ -500,7 +528,7 @@ def occupancy_motif_density():
 	ax.spines['right'].set_visible(False)
 	ax.legend(title='No. of RBDs', loc='best')
 	fig.tight_layout()
-	fig.savefig('../fig/occupancy_motif_density.pdf', bbox_inches = 'tight', dpi = 600)
+	fig.savefig('../fig/occupancy_motif_density_fit.pdf', bbox_inches = 'tight', dpi = 600)
 	plt.show()
 
 
@@ -521,6 +549,11 @@ def total_kd(N, **kwargs):
 	model = rbp_model.nxn(*params)
 	return model.analytical_kd()
 
+def hill_func(conc, ka, n):
+	return(conc**n / (ka**n + conc**n))
+
+def hill_fit(occupancy, motif_density, guess):
+	return scipy.optimize.curve_fit(hill_func, motif_density, occupancy, p0=(guess[0], guess[1]))
 
 if __name__ == '__main__':
 	#kd_N()
@@ -531,9 +564,8 @@ if __name__ == '__main__':
 	#example_overview()
 	#rbd_distribution()
 	#kd_linker_length()
-	#kd_motif_density()
+	kd_motif_density()
 	#occupancy_linker_length()
 	occupancy_motif_density()
-
 
 	pass
