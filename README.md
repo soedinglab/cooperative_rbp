@@ -16,26 +16,26 @@ To plot the figures in our paper the following functions from the script `visual
 **Figure 1** Many RBPs have more than one domain
 
 	rbp_distribution()
+	
+**Figure 3** Comparison of experimental *K*<sub>d</sub>s to predictions from our model are in good agreement
 
-**Figure 3A** Dissociation constants decrease exponentially with the number of binding domains
+	example_overview()
+
+**Figure 4A** Dissociation constants decrease exponentially with the number of binding domains
 
 	kd_tot_N()
 
-**Figure 3B** Individual domains contribute to the total *K*<sub>d</sub> up to a threshold in the individual *K*<sub>d</sub>
+**Figure 4B** Individual domains contribute to the total *K*<sub>d</sub> up to a threshold in the individual *K*<sub>d</sub>
 
 	kd_tot_k3()
 
-**Figure 3C** Dissociation constants decrease with the binding site density on the RNA
+**Figure 4C** Dissociation constants decrease with the binding site density on the RNA
 
 	kd_motif_density()
 
-**Figure 3D** Relative occupancy as a function of binding site density on the RNA
+**Figure 4D** Relative occupancy as a function of binding site density on the RNA
 
 	occupancy_linker_length()
-
-**Figure 4** Comparison of experimental *K*<sub>d</sub>s to predictions from our model are in good agreement
-
-	example_overview()
 
 
 ## Dependencies
