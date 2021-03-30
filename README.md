@@ -1,5 +1,8 @@
 # Scripts for simulation and plotting of thermodynamic model for cooperative RNA-binding of multidomain proteins
 
+ [![License](https://img.shields.io/github/license/soedinglab/cooperative_rbp.svg)](https://choosealicense.com/licenses/gpl-3.0/)
+ [![Issues](https://img.shields.io/github/issues/soedinglab/cooperative_rbp.svg)](https://github.com/soedinglab/cooperative_rbp/issues)
+
 ##  Publication
 [Stitzinger S.H., Sohrabi-Jahromi S., and Söding J. (2021) Cooperativity boosts affinity and specificity of proteins with multiple RNA-binding domains. bioRxiv](https://www.biorxiv.org/content/10.1101/2021.01.27.428308v1).
 
@@ -38,20 +41,24 @@ To plot the figures in our paper the following functions from the script `visual
 
 	rbp_distribution()
 	oligomer_distribution()
+	
+**Figure 3** Comparison of experimental *K*<sub>d</sub>s to predictions from our model are in good agreement
 
-**Figure 3A** Dissociation constants decrease exponentially with the number of binding domains
+	example_overview()
+
+**Figure 4A** Dissociation constants decrease exponentially with the number of binding domains
 
 	kd_tot_N()
 
-**Figure 3B** Individual domains contribute to the total *K*<sub>d</sub> up to a threshold in the individual *K*<sub>d</sub>
+**Figure 4B** Individual domains contribute to the total *K*<sub>d</sub> up to a threshold in the individual *K*<sub>d</sub>
 
 	kd_tot_k3()
 
-**Figure 3C** Dissociation constants decrease with the binding site density on the RNA
+**Figure 4C** Dissociation constants decrease with the binding site density on the RNA
 
 	kd_motif_density()
 
-**Figure 3D** Relative occupancy as a function of binding site density on the RNA
+**Figure 4D** Relative occupancy as a function of binding site density on the RNA
 
 	occupancy_linker_length()
 
