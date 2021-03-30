@@ -27,7 +27,7 @@ The prediction of the total *K*<sub>d</sub> can be started from the command line
 	  			without this option, only the calculations are used
 	  -n REPLICATES, --replicates REPLICATES
 				number of replicate simulations, over which to
-				average, default: 10
+				average, default: 1
 	  -p, --plot		plot the trajectory of the simulation in a new window
 
 For example, to run a simulation of the protein hnRNP A1, averaged over 5 trajectories, and to show a plot of the trajectory after the simulation we can use
