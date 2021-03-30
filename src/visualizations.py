@@ -22,6 +22,9 @@ import scipy.optimize
 
 from fractions import Fraction
 
+import urllib.parse
+import urllib.request
+
 import rbp_model
 
 #review of RNA chain flexibility in Bao, 2016
@@ -244,27 +247,28 @@ def example_overview():
 	plt.show()
 
 
+def count_domains(domain_string):
+	domain_string = str(domain_string)
+	if domain_string == 'b\'\\\\N\'' or domain_string == 'b\'\'':
+		return 0
+	counting = False
+	counter = 0
+	counter_string = ''
+	for elem in domain_string:
+		if elem == 'x':
+			counting = True
+		elif counting == True and elem != ';' and elem != '\'':
+			counter_string += elem
+		elif (elem == ';' or elem == '\'') and counting == True:
+			counter += int(counter_string)
+			counter_string = ''
+			counting = False
+
+	return counter
+
 
 def rbd_distribution():
 	"""Showing the distribution of RNA binding domains among RNA binding proteins. Data from RBPDB (http:// rbpdb.ccbr.utoronto.ca/)"""
-	def count_domains(domain_string):
-		domain_string = str(domain_string)
-		if domain_string == 'b\'\\\\N\'' or domain_string == 'b\'\'':
-			return 0
-		counting = False
-		counter = 0
-		counter_string = ''
-		for elem in domain_string:
-			if elem == 'x':
-				counting = True
-			elif counting == True and elem != ';' and elem != '\'':
-				counter_string += elem
-			elif (elem == ';' or elem == '\'') and counting == True:
-				counter += int(counter_string)
-				counter_string = ''
-				counting = False
-
-		return counter
 
 
 	#read data from file
@@ -279,7 +283,7 @@ def rbd_distribution():
 
 	species_names = np.array(['Homo sapiens', 'Mus musculus', 'Drosophila melanogaster', 'Caenorhabditis elegans'])
 	no_bins = 7
-	#new array size max_value
+	#new array size no_bins or max_value
 	domain_count = np.zeros((species_names.shape[0], no_bins+1)) #+1 because of bin with 0 domains
 
 	counter = 0
@@ -298,7 +302,7 @@ def rbd_distribution():
 	#plot data
 	plot_colors = plt.cm.Set3([0,5,2,3])
 
-	fig, ax = plt.subplots(1,1, figsize=(5,3))
+	fig, ax = plt.subplots(1,1, figsize=(4.7,2.82))
 
 	for ind, elem in enumerate(domain_count):
 		ax.bar(range(1, len(elem)), elem[1:], bottom = np.sum(domain_count[:ind, 1:], axis=0), width = 0.4, label=species_names[ind], color=plot_colors[ind])
@@ -312,6 +316,114 @@ def rbd_distribution():
 	ax.legend()
 	fig.tight_layout()
 	fig.savefig('../fig/rbp_distribution.pdf', bbox_inches = 'tight', dpi = 600)
+	plt.show()
+
+
+def oligomer_distribution():
+	""" Showing the distribution of Mono-, Di- and Oligomers among RNA binding proteins. Data from PDBePISA (https://www.ebi.ac.uk/pdbe/pisa/)."""
+
+
+	domains = np.loadtxt('../examples/RBPDB_v1.3.1_proteins.tdt', dtype = int, delimiter = '\t', converters = {8: count_domains}, usecols = (8))
+	uniprot_ids = np.loadtxt('../examples/RBPDB_v1.3.1_proteins.tdt', dtype = str, delimiter='\t', usecols = (14))
+
+	total_proteins = 0
+	
+	#Map UniProt IDs to PDB Ids
+	uniprot_ids_str = ''
+	count = 0
+	for i, elem in enumerate(domains):
+		if elem == 1:
+			total_proteins += 1
+		if elem == 1 and uniprot_ids[i] != '\\N':
+			uniprot_ids_str += ' ' + uniprot_ids[i].replace(';', ' ')
+			count += 1
+
+	url = 'https://www.uniprot.org/uploadlists/'
+
+	params = {
+	'from': 'ID',
+	'to': 'PDB_ID',
+	'format': 'tab',
+	'query': uniprot_ids_str,
+	}
+
+	data = urllib.parse.urlencode(params)
+	data = data.encode('utf-8')
+	req = urllib.request.Request(url, data)
+	with urllib.request.urlopen(req) as f:
+		response = f.read()
+	#print(response.decode('utf-8').split('\n'))
+
+	id_map = [[],[],[]]
+	
+	#parse output of mapping of uniprot ids to pdb ids
+	for elem in response.decode('utf-8').split('\n')[1:]:
+		if elem.split('\t') != [''] and elem.split('\t')[1]:
+			id_map[0].append(elem.split('\t')[0])
+			id_map[1].append(elem.split('\t')[1])
+
+	print('From ' + str(total_proteins) + ' proteins with one domain, we have ' + str(len(uniprot_ids_str.split())) + ' UniProt Ids, which can be connected to ' + str(len(id_map[0])) + ' PDB Ids.')
+
+	#quataernary structure data
+	qs_ids = np.loadtxt('../examples/pdbepisa.dat', dtype =str, usecols=(1), skiprows = 2)
+	qs_subunits = np.loadtxt('../examples/pdbepisa.dat', dtype =int, usecols=(2), skiprows = 2)
+
+	#match qs data to the pdbs in our dataset
+	for i in range(len(id_map[0])):
+		match_ids = np.where(qs_ids==id_map[1][i].lower())
+		for j in match_ids[0]:
+			id_map[2].append(qs_subunits[j])
+		if match_ids[0].size==0:
+			id_map[2].append(np.nan)
+
+
+	#for i in range(0,len(id_map[0])-1):
+	#	print(id_map[0][i], id_map[2][i])
+
+	#count number of oligomers, remove redundant PDB Ids
+	nans = 0
+	non_redundant_pdbs = []
+	no_bins = 7
+	oligomer_count = np.zeros((no_bins))
+	for i, elem in enumerate(id_map[2]):
+		#print(id_map[0][i], id_map[1][i], id_map[2][i])
+		if id_map[1][i] in non_redundant_pdbs:
+			continue
+		if elem > (no_bins - 1):
+			oligomer_count[-1] += 1
+		elif np.isnan(elem):
+			nans += 1
+			non_redundant_pdbs.append(id_map[1][i])
+			continue
+		else:
+			oligomer_count[elem-1] += 1
+		non_redundant_pdbs.append(id_map[1][i])
+	
+	#count non redundant UniProt Ids in the result structures
+	non_redundant_result_uniprots = []
+	for elem in non_redundant_pdbs:
+		index = [i for i, e in enumerate(id_map[1]) if e == elem]
+		for i in index:
+			if id_map[0][i] not in non_redundant_result_uniprots:
+				non_redundant_result_uniprots.append(id_map[0][i])
+
+
+
+	
+	print('The UniProt Ids could be connected to ' + str(np.sum(oligomer_count) + nans) + ' unique PDB Ids. Out of these, the PDBePISA database contained data for ' + str(np.sum(oligomer_count)) + ' protein structures, from ' + str(len(non_redundant_result_uniprots)) + ' unique proteins.')
+
+	fig, ax = plt.subplots(1,1, figsize=(4,2.4))
+	ax.bar(range(1, no_bins+1), oligomer_count,  width = 0.4, color='black')
+
+	ax.set_xticks(range(1, no_bins+1))
+	ax.set_xticklabels([1, 2, 3, 4, 5, 6, '7+'])
+	ax.set_ylabel(r'PDB structures')
+	ax.set_xlabel(r'Oligomeric state')
+	ax.spines['top'].set_visible(False)
+	ax.spines['right'].set_visible(False)
+	#ax.legend()
+	fig.tight_layout()
+	fig.savefig('../fig/oligomer_distribution.pdf', bbox_inches = 'tight', dpi = 600)
 	plt.show()
 
 
@@ -562,10 +674,11 @@ if __name__ == '__main__':
 	#N_4_trajectory()
 	#N_4_trajectory_detail()
 	#example_overview()
-	#rbd_distribution()
+	rbd_distribution()
+	oligomer_distribution()
 	#kd_linker_length()
-	kd_motif_density()
+	#kd_motif_density()
 	#occupancy_linker_length()
-	occupancy_motif_density()
+	#occupancy_motif_density()
 
 	pass
