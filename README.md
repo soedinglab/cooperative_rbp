@@ -62,10 +62,6 @@ To plot the figures in our paper the following functions from the script `visual
 
 	occupancy_linker_length()
 
-**Figure 4** Comparison of experimental *K*<sub>d</sub>s to predictions from our model are in good agreement
-
-	example_overview()
-
 ## Dependencies
 The scripts require python3 with the following libraries:
 - `numpy`
