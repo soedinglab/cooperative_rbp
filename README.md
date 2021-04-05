@@ -32,7 +32,7 @@ The prediction of the total *K*<sub>d</sub> can be started from the command line
 
 For example, to run a simulation of the protein hnRNP A1, averaged over 5 trajectories, and to show a plot of the trajectory after the simulation we can use
 	
-	python3 get_total_kd.py ../example/hnrnp_a1.csv -s -n 5 -p
+	python3 get_total_kd.py ../examples/hnrnp_a1.csv -s -n 5 -p
 
 ## Plotting script
 To plot the figures in our paper the following functions from the script `visualizations.py` were used.
