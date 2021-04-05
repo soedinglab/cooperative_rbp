@@ -7,10 +7,11 @@ import matplotlib as mpl
 import matplotlib.colors as colors
 
 import matplotlib.pyplot as plt
-plt.rcParams['text.usetex'] = True
-plt.rcParams['text.latex.preamble'] = [r'\usepackage{lmodern} \usepackage{siunitx}']
+#plt.rcParams['text.usetex'] = True
+#plt.rcParams['text.latex.preamble'] = [r'\usepackage{lmodern} \usepackage{siunitx}']
 plt.rcParams['font.family'] = 'serif'
 plt.rcParams['font.serif'] = ['Latin Modern Roman']
+plt.rcParams['mathtext.fontset'] = 'cm'
 plt.rcParams['lines.markersize'] = 4
 
 

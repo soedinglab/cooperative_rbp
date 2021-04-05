@@ -7,10 +7,11 @@ Script to visualize the results from the simulations and anytical calculations.
 import matplotlib as mpl
 #mpl.use("pgf")
 import matplotlib.pyplot as plt
-plt.rcParams['text.usetex'] = True
-plt.rcParams['text.latex.preamble'] = [r'\usepackage{lmodern} \usepackage{siunitx}']
+#plt.rcParams['text.usetex'] = True
+#plt.rcParams['text.latex.preamble'] = [r'\usepackage{lmodern} \usepackage{siunitx}']
 plt.rcParams['font.family'] = 'serif'
 plt.rcParams['font.serif'] = ['Latin Modern Roman']
+plt.rcParams['mathtext.fontset'] = 'cm'
 #plt.rcParams['pgf.rcfonts'] = False
 #plt.rcParams['pgf.preamble'] = ['\\usepackage{lmodern} \\usepackage{siunitx}']
 plt.rcParams['lines.markersize'] = 4
@@ -75,7 +76,7 @@ def kd_N():
 
 	ax.set_yscale('log')
 	ax.set_xticks(range(1,6))
-	ax.set_ylabel(r'$K_\text{d, tot}(N)$ [\si{M}]')
+	ax.set_ylabel(r'$K_\mathrm{d, tot}(N)$ [M]')
 	ax.set_xlabel(r'$N$')
 	ax.spines['top'].set_visible(False)
 	ax.spines['right'].set_visible(False)
@@ -110,7 +111,7 @@ def kd_tot_k3():
 	plot_colors = plt.cm.Greens(np.linspace(0.5,1,3))
 	#plot_colors = ['C1', 'b', 'r']
 	plot_markers = ['^', 'o', 's']
-	plot_labels = ['\SI{e-5}{M}', '\SI{e-4}{M}', '\SI{e-3}{M}']
+	plot_labels = ['$10^{-5}$ M', '$10^{-4}$ M', '$10^{-3}$ M']
 
 
 	for j in range(1, parameters + 1):
@@ -126,13 +127,13 @@ def kd_tot_k3():
 
 	ax.set_yscale('log')
 	ax.set_xscale('log')
-	ax.set_ylabel(r'$K_\text{d, tot}(3)$ [\si{M}]')
-	ax.set_xlabel(r'$K_{\mathrm{d}3}$ [\si{M}]')
+	ax.set_ylabel(r'$K_\mathrm{d, tot}(3)$ [M]')
+	ax.set_xlabel(r'$K_{\mathrm{d}3}$ [M]')
 	ax.spines['top'].set_visible(False)
 	ax.spines['right'].set_visible(False)
 	ax.legend(title='$K_{\mathrm{d}2}$:')
 	fig.tight_layout()
-	fig.savefig('../fig/kd_tot_k3.pdf', bbox_inches = 'tight', dpi = 600)
+	#fig.savefig('../fig/kd_tot_k3.pdf', bbox_inches = 'tight', dpi = 600)
 	plt.show()
 
 
@@ -157,11 +158,11 @@ def kd_heat():
 	ax.clabel(contour_lines, inline=False, inline_spacing=0, fmt=fmt, fontsize='smaller')
 
 	clb = fig.colorbar(heat_plot)
-	clb.set_label(r'$K_\text{d, tot}(3)$ [\si{M}]')
+	clb.set_label(r'$K_\mathrm{d, tot}(3)$ [M]')
 	ax.set_yscale('log')
 	ax.set_xscale('log')
-	ax.set_ylabel(r'$K_{\mathrm{d}2}$ [\si{M}]')
-	ax.set_xlabel(r'$K_{\mathrm{d}3}$ [\si{M}]')
+	ax.set_ylabel(r'$K_{\mathrm{d}2}$ [M]')
+	ax.set_xlabel(r'$K_{\mathrm{d}3}$ [M]')
 	#ax.spines['top'].set_visible(False)
 	#ax.spines['right'].set_visible(False)
 	ax.set_aspect('equal')
@@ -228,14 +229,14 @@ def example_overview():
 
 	ax.plot(range(1, example_count+1), individual_kd_1, marker='^', color=plt.cm.tab20([18])[0], label = 'Individual domains (experimental)', linestyle='')
 	ax.plot(range(1, example_count+1), individual_kd_2, marker='^', color=plt.cm.tab20([18])[0], linestyle='')
-	ax.plot(range(1, example_count+1), exp_total_kd, marker='D', color=plt.cm.tab20([0])[0], label = r'Total $K_\text{d}$ (experimental)', linestyle='')
-	ax.plot(range(1, example_count+1), theoretical_total_kd, marker='o', color=plt.cm.tab20([6])[0], label = r'Total $K_\text{d}$ (calculated)', linestyle='')
+	ax.plot(range(1, example_count+1), exp_total_kd, marker='D', color=plt.cm.tab20([0])[0], label = r'Total $K_\mathrm{d}$ (experimental)', linestyle='')
+	ax.plot(range(1, example_count+1), theoretical_total_kd, marker='o', color=plt.cm.tab20([6])[0], label = r'Total $K_\mathrm{d}$ (calculated)', linestyle='')
 	
 
 
 	ax.set_ylim(1e-10, 1e-3)
 	ax.set_yscale('log')
-	ax.set_ylabel(r'$K_\text{d}$ [\si{M}]')
+	ax.set_ylabel(r'$K_\mathrm{d}$ [M]')
 	#ax.set_xlabel()
 	ax.set_xticks(range(1,example_count+1))
 	ax.set_xticklabels(['ZBP1', 'hnRNP A1', 'PTB34', r'IMP3\\RRM12, KH12'])
@@ -447,7 +448,7 @@ def kd_linker_length():
 	ax.plot(linker_length, kd_4, linestyle='', marker='.', label='4', color=plot_colors[2])
 
 	ax.set_yscale('log')
-	ax.set_ylabel(r'$K_{\text{d, tot}}$ [\si{M}]')
+	ax.set_ylabel(r'$K_{\mathrm{d, tot}}$ [M]')
 	ax.set_xlabel(r'RNA linker length [nt]')
 	ax.spines['top'].set_visible(False)
 	ax.spines['right'].set_visible(False)
@@ -511,7 +512,7 @@ def kd_motif_density():
 	plt.xticks(motif_density, [str(Fraction(i).limit_denominator()) for i in motif_density])
 	ax.set_xticks([], minor=True)
 
-	ax.set_ylabel(r'$K_\text{d, tot}$ [\si{M}]')
+	ax.set_ylabel(r'$K_\mathrm{d, tot}$ [M]')
 	ax.set_xlabel(r'Binding site density [nt$^{-1}$]')
 	#ax.set_ylim(-0.1,1.1)
 	ax.spines['top'].set_visible(False)
@@ -640,7 +641,7 @@ def occupancy_motif_density():
 	ax.spines['right'].set_visible(False)
 	ax.legend(title='No. of RBDs', loc='best')
 	fig.tight_layout()
-	fig.savefig('../fig/occupancy_motif_density_fit.pdf', bbox_inches = 'tight', dpi = 600)
+	#fig.savefig('../fig/occupancy_motif_density_fit.pdf', bbox_inches = 'tight', dpi = 600)
 	plt.show()
 
 
@@ -674,8 +675,8 @@ if __name__ == '__main__':
 	#N_4_trajectory()
 	#N_4_trajectory_detail()
 	#example_overview()
-	rbd_distribution()
-	oligomer_distribution()
+	#rbd_distribution()
+	#oligomer_distribution()
 	#kd_linker_length()
 	#kd_motif_density()
 	#occupancy_linker_length()
