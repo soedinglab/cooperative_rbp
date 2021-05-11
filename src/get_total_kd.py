@@ -7,11 +7,12 @@ import matplotlib as mpl
 import matplotlib.colors as colors
 
 import matplotlib.pyplot as plt
+mpl.use('AGG')
 #plt.rcParams['text.usetex'] = True
 #plt.rcParams['text.latex.preamble'] = [r'\usepackage{lmodern} \usepackage{siunitx}']
-plt.rcParams['font.family'] = 'serif'
-plt.rcParams['font.serif'] = ['Latin Modern Roman']
-plt.rcParams['mathtext.fontset'] = 'cm'
+#plt.rcParams['font.family'] = 'serif'
+#plt.rcParams['font.serif'] = ['Latin Modern Roman']
+#plt.rcParams['mathtext.fontset'] = 'cm'
 plt.rcParams['lines.markersize'] = 4
 
 
@@ -26,7 +27,7 @@ def parse_args():
 	parser.add_argument('parameter_path', help = "path to a file that stores parameters of the protein")
 	parser.add_argument('-s', '--simulate', action='store_true', help = "run gillespie simulations to predict the Kd")
 	parser.add_argument('-n', '--replicates', action='store', type = int, default = 1, help = "number of replicate simulations, over which to average, default: 1")
-	parser.add_argument('-p', '--plot', action='store_true', help = "plot the result of the simulation in a new window")
+	parser.add_argument('-p', '--plot', action='store_true', help = "plot the result of the simulation and save the plot to PDF in the current directory")
 	return parser.parse_args()
 
 
@@ -35,7 +36,8 @@ def load_params(path):
 
 
 def simulate_kd(model, num_trajectories, volume):
-	results = model.run(False, num_trajectories)
+	results = model.run(num_trajectories)
+	results = results.to_array() #create array from the result object, without any labels
 
 	ordered_names = list(model.sanitized_species_names().keys())
 
@@ -79,5 +81,5 @@ if __name__ == '__main__':
 	if arguments.plot:
 		if not arguments.simulate or not trajectories:
 			raise UserWarning('-p or --plot option given, but no simulation took place. No plot can be shown. Please give this option in conjuction with -s or --simulate option.')
-		rbp_model.plot_trajectories(*trajectories)
+		rbp_model.plot_trajectories(*trajectories, show=False, path=arguments.parameter_path)
 

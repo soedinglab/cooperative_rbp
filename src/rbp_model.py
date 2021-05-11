@@ -120,13 +120,13 @@ class nxn(gillespy.Model):
 		self.timespan(np.linspace(0,time[0],time[1]))
 
 
-	def run(self, labels, num_trajectories):
+	def run(self, num_trajectories):
 		"""Overrides the run method from the parent class. May print a warning and then runs the original method.
 		"""
 		#Print warning for proteins with a flexible linker between binding domains and more than two binding sites. This can not be done easily in the simulation. The analytical result can be used instead.
 		if self.simulation_warning == True:
 			print('Please note, that simulations are not implemented for proteins containing a flexible linker between binding domains and more than two binding sites. Please use the function analytical_kd to estimate the total kd based on our analytical result.')
-		return super().run(show_labels=labels, number_of_trajectories=num_trajectories)
+		return super().run(show_labels=True, number_of_trajectories=num_trajectories)
 
 
 
@@ -416,7 +416,7 @@ def get_model_parameters(model_file):
 
 
 
-def init_run_print_model(parameter_file, labels=False, num_trajectories=1, avg=True, simulate=True, plot = True):
+def init_run_print_model(parameter_file, num_trajectories=1, avg=True, simulate=True, plot = True):
 	"""
 	Creates an instance of the model, runs the simulation and returns the results.
 	INPUT
@@ -433,7 +433,8 @@ def init_run_print_model(parameter_file, labels=False, num_trajectories=1, avg=T
 	model = nxn(*params)
 	analytical_kd_result = model.analytical_kd()
 	print('Total Kd based on the result from analytical calculations: ', analytical_kd_result)
-	results = model.run(labels, num_trajectories)
+	results = model.run(num_trajectories)
+	results = results.to_array() #create array from the result object, without any labels
 
 	ordered_names = list(model.sanitized_species_names().keys())
 
@@ -463,7 +464,7 @@ def init_run_print_model(parameter_file, labels=False, num_trajectories=1, avg=T
 
 
 
-def plot_trajectories(time, species, names):
+def plot_trajectories(time, species, names, show=True, path=''):
 	"""
 	Creates overview plots from the simulated data.
 	INPUT
@@ -478,10 +479,14 @@ def plot_trajectories(time, species, names):
 
 
 	plt.xlabel('Time')
-	plt.ylabel('No. of Species')
+	plt.ylabel('No. of Molecules')
 	plt.legend()
 	plt.tight_layout()
-	plt.show()
+	if show:
+		plt.show()
+	else:
+		plt.savefig(path + '.pdf')
+		print('A plot with the trajectory has been saved to \'' + path + '.pdf\'')
 
 
 

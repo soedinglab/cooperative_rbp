@@ -7,11 +7,12 @@ Script to visualize the results from the simulations and anytical calculations.
 import matplotlib as mpl
 #mpl.use("pgf")
 import matplotlib.pyplot as plt
+mpl.use('AGG')
 #plt.rcParams['text.usetex'] = True
 #plt.rcParams['text.latex.preamble'] = [r'\usepackage{lmodern} \usepackage{siunitx}']
-plt.rcParams['font.family'] = 'serif'
-plt.rcParams['font.serif'] = ['Latin Modern Roman']
-plt.rcParams['mathtext.fontset'] = 'cm'
+#plt.rcParams['font.family'] = 'serif'
+#plt.rcParams['font.serif'] = ['Latin Modern Roman']
+#plt.rcParams['mathtext.fontset'] = 'cm'
 #plt.rcParams['pgf.rcfonts'] = False
 #plt.rcParams['pgf.preamble'] = ['\\usepackage{lmodern} \\usepackage{siunitx}']
 plt.rcParams['lines.markersize'] = 4
