@@ -7,12 +7,12 @@ Script to visualize the results from the simulations and anytical calculations.
 import matplotlib as mpl
 #mpl.use("pgf")
 import matplotlib.pyplot as plt
-mpl.use('AGG')
-#plt.rcParams['text.usetex'] = True
-#plt.rcParams['text.latex.preamble'] = [r'\usepackage{lmodern} \usepackage{siunitx}']
-#plt.rcParams['font.family'] = 'serif'
-#plt.rcParams['font.serif'] = ['Latin Modern Roman']
-#plt.rcParams['mathtext.fontset'] = 'cm'
+#mpl.use('AGG')
+plt.rcParams['text.usetex'] = True
+plt.rcParams['text.latex.preamble'] = [r'\usepackage{lmodern} \usepackage{siunitx}']
+plt.rcParams['font.family'] = 'serif'
+plt.rcParams['font.serif'] = ['Latin Modern Roman']
+plt.rcParams['mathtext.fontset'] = 'cm'
 #plt.rcParams['pgf.rcfonts'] = False
 #plt.rcParams['pgf.preamble'] = ['\\usepackage{lmodern} \\usepackage{siunitx}']
 plt.rcParams['lines.markersize'] = 4
@@ -223,15 +223,21 @@ def example_overview():
 	exp_total_kd = [13e-9, 15.5e-9, 10e-9, 33.4e-9]
 	theoretical_total_kd = [2.4e-9, 17e-9, 7.1e-9, 1.3e-8]
 
+	indep_binding_tot_kd = (np.array(individual_kd_1)**(-1) + np.array(individual_kd_2)**(-1))**(-1)
+
 	example_count = len(theoretical_total_kd)
 
 	default_style = {"markersize":5, "linestyle":'', "barsabove":True, "ecolor":'black', "capsize":2, "elinewidth":1.5}
 
-
-	ax.plot(range(1, example_count+1), individual_kd_1, marker='^', color=plt.cm.tab20([18])[0], label = 'Individual domains (experimental)', linestyle='')
-	ax.plot(range(1, example_count+1), individual_kd_2, marker='^', color=plt.cm.tab20([18])[0], linestyle='')
+	x_values = list(range(1, example_count+1))
+	x_offset = 0.05
+	x_values[2] += x_offset
+	ax.plot(x_values, individual_kd_1, marker='o', color=plt.cm.tab20([18])[0], label = 'Individual domains (experimental)', linestyle='')
+	x_values[2] -= 2*x_offset
+	ax.plot(x_values, individual_kd_2, marker='o', color=plt.cm.tab20([18])[0], linestyle='')
 	ax.plot(range(1, example_count+1), exp_total_kd, marker='D', color=plt.cm.tab20([0])[0], label = r'Total $K_\mathrm{d}$ (experimental)', linestyle='')
-	ax.plot(range(1, example_count+1), theoretical_total_kd, marker='o', color=plt.cm.tab20([6])[0], label = r'Total $K_\mathrm{d}$ (calculated)', linestyle='')
+	ax.plot(range(1, example_count+1), theoretical_total_kd, marker='s', color=plt.cm.tab20([6])[0], label = r'Total $K_\mathrm{d}$ (calculated)', linestyle='')
+	ax.plot(range(1, example_count+1), indep_binding_tot_kd, marker='^', color=plt.cm.tab20([2])[0], label = r'$K_\mathrm{d}$ indep. binding (calculated)', linestyle='')
 	
 
 
@@ -243,10 +249,10 @@ def example_overview():
 	ax.set_xticklabels(['ZBP1', 'hnRNP A1', 'PTB34', r'IMP3\\RRM12, KH12'])
 	ax.spines['top'].set_visible(False)
 	ax.spines['right'].set_visible(False)
-	ax.legend(fontsize = 'x-small', loc = 'best')
+	ax.legend(fontsize = 'x-small', loc = (0.5,0.75))
 	fig.tight_layout()
 	fig.savefig('../fig/example_overview.pdf', bbox_inches = 'tight', dpi = 600)
-	plt.show()
+	#plt.show()
 
 
 def count_domains(domain_string):
@@ -461,12 +467,12 @@ def kd_linker_length():
 def kd_motif_density():
 	fig, ax = plt.subplots(1,1, figsize=(5,3))
 
-	RNA_length = 201
+	RNA_length = 400
 	RNA_conc = 1e-7
-	kd_1 = 3e-5
+	kd_1 = 1e-5
 
-	linker_length = np.zeros(7)
-	linker_length[0] = RNA_length-1
+	linker_length = np.zeros(8)
+	linker_length[0] = RNA_length
 	for i in range(1, linker_length.shape[0]):
 		linker_length[i] = int(linker_length[i-1] /2)
 	motif_density = 1 / linker_length
@@ -478,26 +484,38 @@ def kd_motif_density():
 	kd_2 = []
 	kd_3 = []
 	kd_4 = []
+	kd_6 = []
 	for i, elem in enumerate(linker_length):
-		kd_2.append(total_kd(2, L = np.array([elem, 0, elem, 0, elem]), kd=np.array([kd_1, kd_1])))
-		kd_3.append(total_kd(3, L = np.array([elem, 0, elem, 0, elem]), kd=np.array([kd_1, kd_1, kd_1])))
+		kd_2.append(total_kd(2, L = np.array([elem]), kd=np.array([kd_1, kd_1])))
+		kd_3.append(total_kd(3, L = np.array([elem, 0, elem]), kd=np.array([kd_1, kd_1, kd_1])))
 		kd_4.append(total_kd(4, L = np.array([elem, 0, elem, 0, elem]), kd=np.array([kd_1, kd_1, kd_1, kd_1])))
+		kd_6.append(total_kd(6, L = np.array([elem, 0, elem, 0, elem, 0, elem, 0, elem]), kd=np.array([kd_1, kd_1, kd_1, kd_1, kd_1, kd_1])))
 
 
 	kd_1_density = [kd_1 / i for i in motif_count]
-	kd_2_density = [elem / (motif_count[ind] - 1) for ind, elem in enumerate(kd_2)]
-	kd_3_density = [elem / (motif_count[ind] - 2) for ind, elem in enumerate(kd_3[1:], start=1)]
+	kd_2_density = [elem / (motif_count[ind] - 1) for ind, elem in enumerate(kd_2[1:], start=1)]
+	kd_3_density = [elem / (motif_count[ind] - 2) for ind, elem in enumerate(kd_3[2:], start=2)]
 	kd_4_density = [elem / (motif_count[ind] - 3) for ind, elem in enumerate(kd_4[2:], start=2)]
+	kd_6_density = [elem / (motif_count[ind] - 5) for ind, elem in enumerate(kd_6[3:], start=3)]
+
+	# 1 binding site, 2 domains
+	kd_2_density.insert(0, (kd_1/2))
 	
-	# 2 binding sites
-	kd_3_density.insert(0, (kd_2[0]/2))
+	# 2 and 1 binding sites, 3 domains
+	kd_3_density.insert(0, (kd_2[1]/2))
+	kd_3_density.insert(0, (kd_1/3))
 
-	# 3 and 2 binding sites
-	kd_4_density.insert(0, (kd_3[1]/2))
-	kd_4_density.insert(0, (kd_2[0]/3))
+	# 2 and 1 binding sites, 4 domains
+	kd_4_density.insert(0, (kd_2[1]/3))
+	kd_4_density.insert(0, (kd_1/4))
+
+	# 4 and 2 and 1 binding sites, 6 domains 
+	kd_6_density.insert(0, (kd_4[2]/3))
+	kd_6_density.insert(0, (kd_2[1]/5))
+	kd_6_density.insert(0, (kd_1/6))
 
 
-	colors = plt.cm.Purples(np.linspace(0.5,1,4))
+	colors = plt.cm.Purples(np.linspace(0.5,1,5))
 	
 	#occupancy_1 = RNA_conc/(1e-5+RNA_conc)
 	#ax.hlines(occupancy_1, 0, 100, linestyles = 'dashed', linewidth = 1, label='1')
@@ -505,8 +523,9 @@ def kd_motif_density():
 	ax.plot(motif_density, kd_2_density, linestyle='-', label='2', color=colors[1], marker='o')
 	ax.plot(motif_density, kd_3_density, linestyle='-', label='3', color=colors[2], marker='s')
 	ax.plot(motif_density, kd_4_density, linestyle='-', label='4', color=colors[3], marker='D')
+	ax.plot(motif_density, kd_6_density, linestyle='-', label='6', color=colors[4], marker='h')
 
-	ax.hlines(0.1e-6, (1/200), (1/3), ls='dashed', linewidth=1)
+	ax.hlines(0.1e-6, (1/400), (1/3), ls='dashed', linewidth=1)
 
 	ax.set_xscale('log')
 	ax.set_yscale('log')
@@ -560,12 +579,12 @@ def occupancy_linker_length():
 def occupancy_motif_density():
 	fig, ax = plt.subplots(1,1, figsize=(5,3))
 
-	RNA_length = 201
+	RNA_length = 400
 	RNA_conc = 1e-7
-	kd_1 = 3e-5
+	kd_1 = 1e-5
 
-	linker_length = np.zeros(7)
-	linker_length[0] = RNA_length-1
+	linker_length = np.zeros(8)
+	linker_length[0] = RNA_length
 	for i in range(1, linker_length.shape[0]):
 		linker_length[i] = int(linker_length[i-1] /2)
 	motif_density = 1 / linker_length
@@ -577,35 +596,47 @@ def occupancy_motif_density():
 	kd_2 = []
 	kd_3 = []
 	kd_4 = []
+	kd_6 = []
 	for i, elem in enumerate(linker_length):
-		kd_2.append(total_kd(2, L = np.array([elem, 0, elem, 0, elem]), kd=np.array([kd_1, kd_1])))
-		kd_3.append(total_kd(3, L = np.array([elem, 0, elem, 0, elem]), kd=np.array([kd_1, kd_1, kd_1])))
+		kd_2.append(total_kd(2, L = np.array([elem ]), kd=np.array([kd_1, kd_1])))
+		kd_3.append(total_kd(3, L = np.array([elem, 0, elem]), kd=np.array([kd_1, kd_1, kd_1])))
 		kd_4.append(total_kd(4, L = np.array([elem, 0, elem, 0, elem]), kd=np.array([kd_1, kd_1, kd_1, kd_1])))
+		kd_6.append(total_kd(6, L = np.array([elem, 0, elem, 0, elem, 0, elem, 0, elem]), kd=np.array([kd_1, kd_1, kd_1, kd_1, kd_1, kd_1])))
 
 
 	occupancy_1 = [(RNA_conc/(kd_1 / i + RNA_conc)) for i in motif_count]
-	occupancy_2 = [(RNA_conc/(elem / (motif_count[ind] - 1) + RNA_conc)) for ind, elem in enumerate(kd_2)]
-	occupancy_3 = [(RNA_conc/(elem / (motif_count[ind] - 2) + RNA_conc)) for ind, elem in enumerate(kd_3[1:], start=1)]
+	occupancy_2 = [(RNA_conc/(elem / (motif_count[ind] - 1) + RNA_conc)) for ind, elem in enumerate(kd_2[1:], start=1)]
+	occupancy_3 = [(RNA_conc/(elem / (motif_count[ind] - 2) + RNA_conc)) for ind, elem in enumerate(kd_3[2:], start=2)]
 	occupancy_4 = [(RNA_conc/(elem / (motif_count[ind] - 3) + RNA_conc)) for ind, elem in enumerate(kd_4[2:], start=2)]
+	occupancy_6 = [(RNA_conc/(elem / (motif_count[ind] - 5) + RNA_conc)) for ind, elem in enumerate(kd_4[3:], start=3)]
+
+	# 1 binding site, 2 domains
+	occupancy_2.insert(0, (RNA_conc /(RNA_conc + kd_1/2)))
 	
-	# 2 binding sites
-	occupancy_3.insert(0, (RNA_conc /(RNA_conc + kd_2[0]/2)))
+	# 2 and 1 binding site, 3 domains
+	occupancy_3.insert(0, (RNA_conc /(RNA_conc + kd_2[1]/2)))
+	occupancy_3.insert(0, (RNA_conc /(RNA_conc + kd_1/3)))
 
-	# 3 and 2 binding sites
-	occupancy_4.insert(0, (RNA_conc / (RNA_conc + kd_3[1]/2)))
-	occupancy_4.insert(0, (RNA_conc / (RNA_conc + kd_2[0]/3)))
+	# 2 and 1 binding sites, 4 domains
+	occupancy_4.insert(0, (RNA_conc / (RNA_conc + kd_2[1]/4)))
+	occupancy_4.insert(0, (RNA_conc / (RNA_conc + kd_1/4)))
 
-	colors = plt.cm.Purples(np.linspace(0.5,1,4))
+	# 4 and 2 and 1 binding sites, 6 domains
+	occupancy_6.insert(0, (RNA_conc / (RNA_conc + kd_4[2]/3)))
+	occupancy_6.insert(0, (RNA_conc / (RNA_conc + kd_2[1]/5)))
+	occupancy_6.insert(0, (RNA_conc / (RNA_conc + kd_1/6)))
+
+	colors = plt.cm.Purples(np.linspace(0.5,1,5))
 
 	####
 	# fit to hill curve
-	motif_density_small_steps = np.logspace(np.log2(1/200), np.log2(1/3), num=100, base=2)
+	motif_density_small_steps = np.logspace(np.log2(1/400), np.log2(1/3), num=100, base=2)
 	guess = (1,1)
 	hill_param_1 = hill_fit(occupancy_1, motif_density, guess)
 	print('Parameters for fit to Hill function with 1 domain: ', hill_param_1)
 	hill_plot = plt.plot(motif_density_small_steps, hill_func(motif_density_small_steps, *hill_param_1[0]), color=colors[0])
 
-	guess = (1,1)
+	guess = (0.001,1)
 	hill_param_2 = hill_fit(occupancy_2, motif_density, guess)
 	print('Parameters for fit to Hill function with 2 domains: ', hill_param_2)
 	hill_plot = plt.plot(motif_density_small_steps, hill_func(motif_density_small_steps, *hill_param_2[0]), color=colors[1])
@@ -613,12 +644,16 @@ def occupancy_motif_density():
 	guess = (0.001,2)
 	hill_param_3 = hill_fit(occupancy_3, motif_density, guess)
 	print('Parameters for fit to Hill function with 3 domains: ', hill_param_3)
-	hill_plot = plt.plot(motif_density_small_steps, hill_func(motif_density_small_steps, *hill_param_3[0]), color=colors[2])
-	
+	hill_plot = plt.plot(motif_density_small_steps, hill_func(motif_density_small_steps, *hill_param_3[0]), color=colors[2]) 
 	guess = (0.0001,3)
 	hill_param_4 = hill_fit(occupancy_4, motif_density, guess)
 	print('Parameters for fit to Hill function with 4 domains: ', hill_param_4)
 	hill_plot = plt.plot(motif_density_small_steps, hill_func(motif_density_small_steps, *hill_param_4[0]), color=colors[3])
+
+	guess = (0.0001,3)
+	hill_param_6 = hill_fit(occupancy_6, motif_density, guess)
+	print('Parameters for fit to Hill function with 6 domains: ', hill_param_6)
+	hill_plot = plt.plot(motif_density_small_steps, hill_func(motif_density_small_steps, *hill_param_6[0]), color=colors[4])
 
 
 	#occupancy_1 = RNA_conc/(1e-5+RNA_conc)
@@ -627,8 +662,9 @@ def occupancy_motif_density():
 	ax.plot(motif_density, occupancy_2, linestyle='', label='2', color=colors[1], marker='o')
 	ax.plot(motif_density, occupancy_3, linestyle='', label='3', color=colors[2], marker='s')
 	ax.plot(motif_density, occupancy_4, linestyle='', label='4', color=colors[3], marker='D')
+	ax.plot(motif_density, occupancy_6, linestyle='', label='6', color=colors[4], marker='h')
 
-	ax.hlines(0.5, (1/200), (1/3), ls='dashed', linewidth=1)
+	ax.hlines(0.5, (1/400), (1/3), ls='dashed', linewidth=1)
 
 	ax.set_xscale('log')
 	#ax.set_yscale('log')
@@ -638,11 +674,12 @@ def occupancy_motif_density():
 	ax.set_ylabel(r'Relative occupancy')
 	ax.set_xlabel(r'Binding site density [nt$^{-1}$]')
 	#ax.set_ylim(-0.1,1.1)
+	ax.set_xlim(1/650, 1/2.5)
 	ax.spines['top'].set_visible(False)
 	ax.spines['right'].set_visible(False)
-	ax.legend(title='No. of RBDs', loc='best')
+	ax.legend(title='No. of RBDs', loc=(0.01, 0.5))
 	fig.tight_layout()
-	#fig.savefig('../fig/occupancy_motif_density_fit.pdf', bbox_inches = 'tight', dpi = 600)
+	fig.savefig('../fig/occupancy_motif_density_fit.pdf', bbox_inches = 'tight', dpi = 600)
 	plt.show()
 
 
@@ -681,6 +718,6 @@ if __name__ == '__main__':
 	#kd_linker_length()
 	#kd_motif_density()
 	#occupancy_linker_length()
-	#occupancy_motif_density()
+	occupancy_motif_density()
 
 	pass
