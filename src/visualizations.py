@@ -579,11 +579,11 @@ def occupancy_linker_length():
 def occupancy_motif_density():
 	fig, ax = plt.subplots(1,1, figsize=(5,3))
 
-	RNA_length = 400
+	RNA_length = 200
 	RNA_conc = 1e-7
-	kd_1 = 1e-5
+	kd_1 = 50e-6
 
-	linker_length = np.zeros(8)
+	linker_length = np.zeros(7)
 	linker_length[0] = RNA_length
 	for i in range(1, linker_length.shape[0]):
 		linker_length[i] = int(linker_length[i-1] /2)
@@ -608,7 +608,7 @@ def occupancy_motif_density():
 	occupancy_2 = [(RNA_conc/(elem / (motif_count[ind] - 1) + RNA_conc)) for ind, elem in enumerate(kd_2[1:], start=1)]
 	occupancy_3 = [(RNA_conc/(elem / (motif_count[ind] - 2) + RNA_conc)) for ind, elem in enumerate(kd_3[2:], start=2)]
 	occupancy_4 = [(RNA_conc/(elem / (motif_count[ind] - 3) + RNA_conc)) for ind, elem in enumerate(kd_4[2:], start=2)]
-	occupancy_6 = [(RNA_conc/(elem / (motif_count[ind] - 5) + RNA_conc)) for ind, elem in enumerate(kd_4[3:], start=3)]
+	#occupancy_6 = [(RNA_conc/(elem / (motif_count[ind] - 5) + RNA_conc)) for ind, elem in enumerate(kd_4[3:], start=3)]
 
 	# 1 binding site, 2 domains
 	occupancy_2.insert(0, (RNA_conc /(RNA_conc + kd_1/2)))
@@ -622,26 +622,26 @@ def occupancy_motif_density():
 	occupancy_4.insert(0, (RNA_conc / (RNA_conc + kd_1/4)))
 
 	# 4 and 2 and 1 binding sites, 6 domains
-	occupancy_6.insert(0, (RNA_conc / (RNA_conc + kd_4[2]/3)))
-	occupancy_6.insert(0, (RNA_conc / (RNA_conc + kd_2[1]/5)))
-	occupancy_6.insert(0, (RNA_conc / (RNA_conc + kd_1/6)))
+	#occupancy_6.insert(0, (RNA_conc / (RNA_conc + kd_4[2]/3)))
+	#occupancy_6.insert(0, (RNA_conc / (RNA_conc + kd_2[1]/5)))
+	#occupancy_6.insert(0, (RNA_conc / (RNA_conc + kd_1/6)))
 
 	colors = plt.cm.Purples(np.linspace(0.5,1,5))
 
 	####
 	# fit to hill curve
-	motif_density_small_steps = np.logspace(np.log2(1/400), np.log2(1/3), num=100, base=2)
+	motif_density_small_steps = np.logspace(np.log2(1/200), np.log2(1/3), num=100, base=2)
 	guess = (1,1)
 	hill_param_1 = hill_fit(occupancy_1, motif_density, guess)
 	print('Parameters for fit to Hill function with 1 domain: ', hill_param_1)
 	hill_plot = plt.plot(motif_density_small_steps, hill_func(motif_density_small_steps, *hill_param_1[0]), color=colors[0])
 
-	guess = (0.001,1)
+	guess = (0.01,1)
 	hill_param_2 = hill_fit(occupancy_2, motif_density, guess)
 	print('Parameters for fit to Hill function with 2 domains: ', hill_param_2)
 	hill_plot = plt.plot(motif_density_small_steps, hill_func(motif_density_small_steps, *hill_param_2[0]), color=colors[1])
 
-	guess = (0.001,2)
+	guess = (0.01,2)
 	hill_param_3 = hill_fit(occupancy_3, motif_density, guess)
 	print('Parameters for fit to Hill function with 3 domains: ', hill_param_3)
 	hill_plot = plt.plot(motif_density_small_steps, hill_func(motif_density_small_steps, *hill_param_3[0]), color=colors[2]) 
@@ -650,10 +650,10 @@ def occupancy_motif_density():
 	print('Parameters for fit to Hill function with 4 domains: ', hill_param_4)
 	hill_plot = plt.plot(motif_density_small_steps, hill_func(motif_density_small_steps, *hill_param_4[0]), color=colors[3])
 
-	guess = (0.0001,3)
-	hill_param_6 = hill_fit(occupancy_6, motif_density, guess)
-	print('Parameters for fit to Hill function with 6 domains: ', hill_param_6)
-	hill_plot = plt.plot(motif_density_small_steps, hill_func(motif_density_small_steps, *hill_param_6[0]), color=colors[4])
+	#guess = (0.0001,3)
+	#hill_param_6 = hill_fit(occupancy_6, motif_density, guess)
+	#print('Parameters for fit to Hill function with 6 domains: ', hill_param_6)
+	#hill_plot = plt.plot(motif_density_small_steps, hill_func(motif_density_small_steps, *hill_param_6[0]), color=colors[4])
 
 
 	#occupancy_1 = RNA_conc/(1e-5+RNA_conc)
@@ -662,9 +662,9 @@ def occupancy_motif_density():
 	ax.plot(motif_density, occupancy_2, linestyle='', label='2', color=colors[1], marker='o')
 	ax.plot(motif_density, occupancy_3, linestyle='', label='3', color=colors[2], marker='s')
 	ax.plot(motif_density, occupancy_4, linestyle='', label='4', color=colors[3], marker='D')
-	ax.plot(motif_density, occupancy_6, linestyle='', label='6', color=colors[4], marker='h')
+	#ax.plot(motif_density, occupancy_6, linestyle='', label='6', color=colors[4], marker='h')
 
-	ax.hlines(0.5, (1/400), (1/3), ls='dashed', linewidth=1)
+	ax.hlines(0.5, (1/200), (1/3), linestyle='dashed', linewidth=1)
 
 	ax.set_xscale('log')
 	#ax.set_yscale('log')
@@ -674,12 +674,12 @@ def occupancy_motif_density():
 	ax.set_ylabel(r'Relative occupancy')
 	ax.set_xlabel(r'Binding site density [nt$^{-1}$]')
 	#ax.set_ylim(-0.1,1.1)
-	ax.set_xlim(1/650, 1/2.5)
+	ax.set_xlim(1/250, 1/2.5)
 	ax.spines['top'].set_visible(False)
 	ax.spines['right'].set_visible(False)
 	ax.legend(title='No. of RBDs', loc=(0.01, 0.5))
 	fig.tight_layout()
-	fig.savefig('../fig/occupancy_motif_density_fit.pdf', bbox_inches = 'tight', dpi = 600)
+	#fig.savefig('../fig/occupancy_motif_density_fit.pdf', bbox_inches = 'tight', dpi = 600)
 	plt.show()
 
 
