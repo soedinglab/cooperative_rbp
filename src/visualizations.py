@@ -467,11 +467,11 @@ def kd_linker_length():
 def kd_motif_density():
 	fig, ax = plt.subplots(1,1, figsize=(5,3))
 
-	RNA_length = 400
+	RNA_length = 200
 	RNA_conc = 1e-7
-	kd_1 = 1e-5
+	kd_1 = 50e-6
 
-	linker_length = np.zeros(8)
+	linker_length = np.zeros(7)
 	linker_length[0] = RNA_length
 	for i in range(1, linker_length.shape[0]):
 		linker_length[i] = int(linker_length[i-1] /2)
@@ -484,19 +484,19 @@ def kd_motif_density():
 	kd_2 = []
 	kd_3 = []
 	kd_4 = []
-	kd_6 = []
+	#kd_6 = []
 	for i, elem in enumerate(linker_length):
 		kd_2.append(total_kd(2, L = np.array([elem]), kd=np.array([kd_1, kd_1])))
 		kd_3.append(total_kd(3, L = np.array([elem, 0, elem]), kd=np.array([kd_1, kd_1, kd_1])))
 		kd_4.append(total_kd(4, L = np.array([elem, 0, elem, 0, elem]), kd=np.array([kd_1, kd_1, kd_1, kd_1])))
-		kd_6.append(total_kd(6, L = np.array([elem, 0, elem, 0, elem, 0, elem, 0, elem]), kd=np.array([kd_1, kd_1, kd_1, kd_1, kd_1, kd_1])))
+		#kd_6.append(total_kd(6, L = np.array([elem, 0, elem, 0, elem, 0, elem, 0, elem]), kd=np.array([kd_1, kd_1, kd_1, kd_1, kd_1, kd_1])))
 
 
 	kd_1_density = [kd_1 / i for i in motif_count]
 	kd_2_density = [elem / (motif_count[ind] - 1) for ind, elem in enumerate(kd_2[1:], start=1)]
 	kd_3_density = [elem / (motif_count[ind] - 2) for ind, elem in enumerate(kd_3[2:], start=2)]
 	kd_4_density = [elem / (motif_count[ind] - 3) for ind, elem in enumerate(kd_4[2:], start=2)]
-	kd_6_density = [elem / (motif_count[ind] - 5) for ind, elem in enumerate(kd_6[3:], start=3)]
+	#kd_6_density = [elem / (motif_count[ind] - 5) for ind, elem in enumerate(kd_6[3:], start=3)]
 
 	# 1 binding site, 2 domains
 	kd_2_density.insert(0, (kd_1/2))
@@ -510,9 +510,9 @@ def kd_motif_density():
 	kd_4_density.insert(0, (kd_1/4))
 
 	# 4 and 2 and 1 binding sites, 6 domains 
-	kd_6_density.insert(0, (kd_4[2]/3))
-	kd_6_density.insert(0, (kd_2[1]/5))
-	kd_6_density.insert(0, (kd_1/6))
+	#kd_6_density.insert(0, (kd_4[2]/3))
+	#kd_6_density.insert(0, (kd_2[1]/5))
+	#kd_6_density.insert(0, (kd_1/6))
 
 
 	colors = plt.cm.Purples(np.linspace(0.5,1,5))
@@ -523,9 +523,9 @@ def kd_motif_density():
 	ax.plot(motif_density, kd_2_density, linestyle='-', label='2', color=colors[1], marker='o')
 	ax.plot(motif_density, kd_3_density, linestyle='-', label='3', color=colors[2], marker='s')
 	ax.plot(motif_density, kd_4_density, linestyle='-', label='4', color=colors[3], marker='D')
-	ax.plot(motif_density, kd_6_density, linestyle='-', label='6', color=colors[4], marker='h')
+	#ax.plot(motif_density, kd_6_density, linestyle='-', label='6', color=colors[4], marker='h')
 
-	ax.hlines(0.1e-6, (1/400), (1/3), ls='dashed', linewidth=1)
+	ax.hlines(0.1e-6, (1/200), (1/3), ls='dashed', linewidth=1)
 
 	ax.set_xscale('log')
 	ax.set_yscale('log')
@@ -596,12 +596,12 @@ def occupancy_motif_density():
 	kd_2 = []
 	kd_3 = []
 	kd_4 = []
-	kd_6 = []
+	#kd_6 = []
 	for i, elem in enumerate(linker_length):
 		kd_2.append(total_kd(2, L = np.array([elem ]), kd=np.array([kd_1, kd_1])))
 		kd_3.append(total_kd(3, L = np.array([elem, 0, elem]), kd=np.array([kd_1, kd_1, kd_1])))
 		kd_4.append(total_kd(4, L = np.array([elem, 0, elem, 0, elem]), kd=np.array([kd_1, kd_1, kd_1, kd_1])))
-		kd_6.append(total_kd(6, L = np.array([elem, 0, elem, 0, elem, 0, elem, 0, elem]), kd=np.array([kd_1, kd_1, kd_1, kd_1, kd_1, kd_1])))
+		#kd_6.append(total_kd(6, L = np.array([elem, 0, elem, 0, elem, 0, elem, 0, elem]), kd=np.array([kd_1, kd_1, kd_1, kd_1, kd_1, kd_1])))
 
 
 	occupancy_1 = [(RNA_conc/(kd_1 / i + RNA_conc)) for i in motif_count]
@@ -674,12 +674,12 @@ def occupancy_motif_density():
 	ax.set_ylabel(r'Relative occupancy')
 	ax.set_xlabel(r'Binding site density [nt$^{-1}$]')
 	#ax.set_ylim(-0.1,1.1)
-	ax.set_xlim(1/250, 1/2.5)
+	#ax.set_xlim(1/250, 1/2.5)
 	ax.spines['top'].set_visible(False)
 	ax.spines['right'].set_visible(False)
-	ax.legend(title='No. of RBDs', loc=(0.01, 0.5))
+	ax.legend(title='No. of RBDs', loc='best')
 	fig.tight_layout()
-	#fig.savefig('../fig/occupancy_motif_density_fit.pdf', bbox_inches = 'tight', dpi = 600)
+	fig.savefig('../fig/occupancy_motif_density_fit.pdf', bbox_inches = 'tight', dpi = 600)
 	plt.show()
 
 
