@@ -124,17 +124,17 @@ def kd_tot_k3():
 	c_eff = model.get_concentration(1,2)
 
 	ax.vlines(c_eff, 1e-9, 1e-5, ls ='dashed', linewidth=1)
-	ax.text(c_eff- 4e-4, 1.2e-5, r'$c_{d_2, L_2}$')
+	ax.text(c_eff- 2e-4, 1.2e-5, r'$c_{23}$')
 
 	ax.set_yscale('log')
 	ax.set_xscale('log')
 	ax.set_ylabel(r'$K_\mathrm{d, tot}(3)$ [M]')
-	ax.set_xlabel(r'$K_{\mathrm{d}3}$ [M]')
+	ax.set_xlabel(r'$K_{\mathrm{d,}3}$ [M]')
 	ax.spines['top'].set_visible(False)
 	ax.spines['right'].set_visible(False)
-	ax.legend(title='$K_{\mathrm{d}2}$:')
+	ax.legend(title='$K_{\mathrm{d,}2}$:')
 	fig.tight_layout()
-	#fig.savefig('../fig/kd_tot_k3.pdf', bbox_inches = 'tight', dpi = 600)
+	fig.savefig('../fig/kd_tot_k3.pdf', bbox_inches = 'tight', dpi = 600)
 	plt.show()
 
 
@@ -719,5 +719,3 @@ if __name__ == '__main__':
 	#kd_motif_density()
 	#occupancy_linker_length()
 	occupancy_motif_density()
-
-	pass
