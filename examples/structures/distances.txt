@@ -78,3 +78,66 @@ KH12 (6GQE):
 KH34 (3KRM, from IGF2BP1):
 	KH34 -> KH12_linker: -41.159  -2.427  10.859
 	KH12_linker: G422 -55.449  14.841  -2.404
+
+
+
+
+
+KSRP (Q92945, AlphaFold):
+=========================
+KH1
+	KH1: G161 -38.579 -5.939 32.892
+	KH1 -> KH2_linker: R216 -43.387 3.042 20.594
+
+KH2
+	KH2: G250 -16.498 -5.944 -2.066
+	//KH2 -> KH1_linker: T234 -26.287 3.124 17.983
+	//KH2 -> KH3_linker: E305 -18.710 7.818 -6.786
+
+KH3
+	KH3: G339 13.666 3.665 -22.715
+	//KH3 -> KH2_linker: G324 2.298 -1.112 -4.765
+	//KH3 -> KH4_linker: S395 4.303 19.762 -23.432
+
+KH4
+	KH4: G441 35.584 9.083 -17.375
+	KH4 -> KH3_linker: G425 19.260 20.710 -31.342
+
+peptide linker length:
+	KH1 -> KH2: 18aa
+	//KH2 -> KH3: 19aa
+	KH3 -> KH4: 30aa
+
+distances:
+	KH1 -> KH2_linker 16.0e-10
+	//KH2 -> KH1_linker 24.1e-10
+	//KH2 -> KH3_linker 14.7e-10
+	//KH3 -> KH2_linker 21.4e-10
+	//KH3 -> KH4_linker 18.6e-10
+	KH4 -> KH3_linker 24.4e-10
+
+KH23 (2JVZ)
+-----------
+KH2 
+	KH2: G250 -5.407  11.162  -3.112
+	KH12_linker: T234 -15.083  -9.666  -7.55
+
+KH3
+	KH3: G339 24.131  -7.439  -0.376
+	KH34_linker: S395 25.283  10.295   0.690
+
+distances:
+	KH2 -> KH3 35.0e-10
+	KH2 -> KH34_linker 30.9e-10
+	KH2 -> KH12_linker 23.4e-10
+	KH3 -> KH12_linker 39.9e-10
+	KH3 -> KH34_linker 17.8e-10
+
+
+
+IMP1-KH12 (6QEY):
+=================
+KH1: G212 78.907  38.855  71.890
+KH2: G293 43.952  21.372  67.562
+
+KH1 -> KH2: 39.3e-10
