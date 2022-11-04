@@ -18,9 +18,12 @@ plt.rcParams['mathtext.fontset'] = 'cm'
 plt.rcParams['lines.markersize'] = 4
 
 import matplotlib.colors as colors
+from matplotlib.ticker import MaxNLocator
+import matplotlib.ticker as ticker
 
 import numpy as np
 import scipy.optimize
+from scipy import constants
 
 from fractions import Fraction
 
@@ -47,7 +50,7 @@ lp_p = 3.04e-10
 lpaa = 3.8e-10
 
 def kd_N():
-	"""Creates a plot to compare the total Kd for different N, using arbitrary distances and binding constants."""
+	"""Plots the total Kd for different N, using arbitrary distances and binding constants."""
 	fig, ax = plt.subplots(1,1, figsize=(5,3))
 
 	N = 5
@@ -57,6 +60,7 @@ def kd_N():
 	lengths=[[[10], [10,0,10], [10,0,10,0,10,0,10], [10,0,10,0,10,0,10,0,10]],
 		[[20], [20,0,20], [20,0,20,0,20,0,20], [20,0,20,0,20,0,20,0,20]],
 		[[40], [40,0,40], [40,0,40,0,40,0,40], [40,0,40,0,40,0,40,0,40]]]
+	c_12 = []
 
 	for j in range(1, parameters + 1):
 		kd.append(kd_n1[j-1])
@@ -64,21 +68,23 @@ def kd_N():
 			#params = rbp_model.get_model_parameters('../examples/compare_N/' + str(j)  + '/N_' + str(i) + '.csv')
 			#model = rbp_model.nxn(*params)
 			kd.append(total_kd(i, L=lengths[j-1][i-2]))
+			if i == 2:
+				c_12.append(c_eff(i, L=lengths[j-1][i-2]))
 			#kd.append(model.analytical_kd())
 
 
 	plot_colors = plt.cm.Blues(np.linspace(0.5,1,3))
 	#plot_colors = ['C1', 'b', 'r']
 	plot_markers = ['^', 'o', 's']
-	plot_labels = ['10 nt', '20 nt', '40 nt']
+	plot_labels = [r'10 nt ($c_{12} = \SI{' + '{:.2e}'.format(c_12[0]) + '}{M}$)', r'20 nt ($c_{12} = \SI{' + '{:.2e}'.format(c_12[1]) + '}{M}$)', r'40 nt ($c_{12} = \SI{' + '{:.2e}'.format(c_12[2]) + '}{M}$)']
 
 	for j in range(1, parameters + 1):
 		ax.plot(range(1, N+1), kd[((j-1)*N):(j*N)], linestyle='-', marker=plot_markers[j-1], color=plot_colors[j-1], label=plot_labels[j-1])
 
 	ax.set_yscale('log')
 	ax.set_xticks(range(1,6))
-	ax.set_ylabel(r'$K_\mathrm{d, tot}(N)$ [M]')
-	ax.set_xlabel(r'$N$')
+	ax.set_ylabel(r'${K_\mathrm{av}(n)}^{-1}$ [M]')
+	ax.set_xlabel(r'$n$')
 	ax.spines['top'].set_visible(False)
 	ax.spines['right'].set_visible(False)
 	ax.legend(title='RNA linker distance')
@@ -88,7 +94,7 @@ def kd_N():
 
 
 def kd_tot_k3():
-	"""Creates a plot to compare the total Kd for different kd of individual sites, using arbitrary distances and binding constants."""
+	"""Plots the total Kd for different kd of individual sites, using arbitrary distances and binding constants."""
 	fig, ax = plt.subplots(1,1, figsize=(5,3))
 
 	N = 6
@@ -128,7 +134,7 @@ def kd_tot_k3():
 
 	ax.set_yscale('log')
 	ax.set_xscale('log')
-	ax.set_ylabel(r'$K_\mathrm{d, tot}(3)$ [M]')
+	ax.set_ylabel(r'${K_\mathrm{av}}^{-1}$ [M]')
 	ax.set_xlabel(r'$K_{\mathrm{d,}3}$ [M]')
 	ax.spines['top'].set_visible(False)
 	ax.spines['right'].set_visible(False)
@@ -137,39 +143,6 @@ def kd_tot_k3():
 	fig.savefig('../fig/kd_tot_k3.pdf', bbox_inches = 'tight', dpi = 600)
 	plt.show()
 
-
-def kd_heat():
-	fig, ax = plt.subplots(1,1, figsize=(5,3))
-
-	k1 = 1e-5
-	x = np.logspace(-5, -1, 100)
-	y = np.logspace(-5, -1, 100)
-	z = np.zeros((x.shape[0], y.shape[0]))
-	for i, elem_i in enumerate(x):
-		for j, elem_j in enumerate(y):
-			z[i][j] = total_kd(3, kd=np.array([k1, elem_j, elem_i]))
-			#z[i][j] = k3_tot(k1, elem_j, elem_i)
-
-	xg, yg = np.meshgrid(x,y)
-	heat_plot = ax.pcolormesh(x,y,z, norm = colors.LogNorm(vmin=z.min(), vmax=z.max()), cmap = 'jet_r', shading = 'gouraud')
-
-	contour_lines = ax.contour(x,y,z, locator=mpl.ticker.LogLocator(subs=(1,)), linestyles='dashed', linewidths=0.5, colors='black')
-	fmt = mpl.ticker.LogFormatterMathtext()
-	fmt.create_dummy_axis()
-	ax.clabel(contour_lines, inline=False, inline_spacing=0, fmt=fmt, fontsize='smaller')
-
-	clb = fig.colorbar(heat_plot)
-	clb.set_label(r'$K_\mathrm{d, tot}(3)$ [M]')
-	ax.set_yscale('log')
-	ax.set_xscale('log')
-	ax.set_ylabel(r'$K_{\mathrm{d}2}$ [M]')
-	ax.set_xlabel(r'$K_{\mathrm{d}3}$ [M]')
-	#ax.spines['top'].set_visible(False)
-	#ax.spines['right'].set_visible(False)
-	ax.set_aspect('equal')
-	fig.tight_layout()
-	fig.savefig('../fig/kd_heat.pdf', bbox_inches = 'tight', dpi = 600)
-	plt.show()
 
 
 def N_4_trajectory():
@@ -213,15 +186,16 @@ def N_4_trajectory_detail():
 
 def example_overview():
 	"""Comparing the calculated/simulated results of the examples to the experimental data."""
-	fig, ax = plt.subplots(1,1, figsize=(5,3))
+	fig, ax = plt.subplots(1,1, figsize=(4.6,3))
 
 	#Data
-	individual_kd_1 = [2.0e-6, 20.4e-6, 2.1e-6, 9e-6]
+	individual_kd_1 = [2.0e-6, 20.4e-6, 2.1e-6, 9e-6, 1.75e-6, 5e-3, 5e-3, 5e-3, 390e-6]
 
-	individual_kd_2 = [1.1e-6, 6.8e-6, 2e-6, 4e-6]
+	individual_kd_2 = [1.1e-6, 6.8e-6, 2e-6, 4e-6, 1.4e-4, 80e-6, 80e-6, 80e-6, 140e-6]
+	individual_kd_3 = [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 350e-6]
 
-	exp_total_kd = [13e-9, 15.5e-9, 10e-9, 33.4e-9]
-	theoretical_total_kd = [2.4e-9, 17e-9, 7.1e-9, 1.3e-8]
+	exp_total_kd = np.array([13e-9, 15.5e-9, 10e-9, 33.4e-9, 4.95e-8, 16.4e-6, 7.1e-6, 1.32e-6, 7.3e-9])
+	theoretical_total_kd = [2.4e-9, 17e-9, 7.1e-9, 1.3e-8, 1.1e-7, 4.1e-5, 2.2e-5, 3.6e-6, 27e-9]
 
 	indep_binding_tot_kd = (np.array(individual_kd_1)**(-1) + np.array(individual_kd_2)**(-1))**(-1)
 
@@ -229,30 +203,31 @@ def example_overview():
 
 	default_style = {"markersize":5, "linestyle":'', "barsabove":True, "ecolor":'black', "capsize":2, "elinewidth":1.5}
 
-	x_values = list(range(1, example_count+1))
+	x_values = np.array([1, 2, 3, 4, 5, 6, 6.5, 7, 8])
 	x_offset = 0.05
-	x_values[2] += x_offset
-	ax.plot(x_values, individual_kd_1, marker='o', color=plt.cm.tab20([18])[0], label = 'Individual domains (experimental)', linestyle='')
-	x_values[2] -= 2*x_offset
-	ax.plot(x_values, individual_kd_2, marker='o', color=plt.cm.tab20([18])[0], linestyle='')
-	ax.plot(range(1, example_count+1), exp_total_kd, marker='D', color=plt.cm.tab20([0])[0], label = r'Total $K_\mathrm{d}$ (experimental)', linestyle='')
-	ax.plot(range(1, example_count+1), theoretical_total_kd, marker='s', color=plt.cm.tab20([6])[0], label = r'Total $K_\mathrm{d}$ (calculated)', linestyle='')
-	ax.plot(range(1, example_count+1), indep_binding_tot_kd, marker='^', color=plt.cm.tab20([2])[0], label = r'$K_\mathrm{d}$ indep. binding (calculated)', linestyle='')
+	ax.plot(x_values+[0,0,0,0,x_offset,x_offset,x_offset,x_offset,0], indep_binding_tot_kd, marker='^', color=plt.cm.tab20([2])[0], label = r'$K_\mathrm{d}$ indep. binding (calculated)', linestyle='')
+	ax.plot(x_values+[0,0,-x_offset,0,-x_offset,0,0,0,-x_offset], individual_kd_1, marker='o', color=plt.cm.tab20([18])[0], label = 'Individual domains (experimental)', linestyle='')
+	ax.plot(x_values+[0,0,x_offset,0,0,-x_offset,-x_offset,-x_offset,0], individual_kd_2, marker='o', color=plt.cm.tab20([18])[0], linestyle='')
+	ax.plot(x_values+[0,0,0,0,0,0,0,0,x_offset], individual_kd_3, marker='o', color=plt.cm.tab20([18])[0], linestyle='')
+	ax.plot(x_values+[0,-x_offset,0,0,0,0,0,0,0], exp_total_kd, marker='D', color=plt.cm.tab20([0])[0], label = r'Total $K_\mathrm{d}$ (experimental)', linestyle='')
+	ax.plot(x_values+[0,x_offset,0,0,0,0,0,0,0], theoretical_total_kd, marker='s', color=plt.cm.tab20([6])[0], label = r'Total $K_\mathrm{d}$ (calculated)', linestyle='')
 	
+	annotation_text = ['8\,nt', '4\,nt', '1\,nt']
+	for i, j in enumerate([5, 6, 7]):
+		plt.annotate(annotation_text[i], (x_values[j], exp_total_kd[j] / 10), ha='center', va='center')
 
-
-	ax.set_ylim(1e-10, 1e-3)
+	ax.set_ylim(1e-10, 1e-2)
 	ax.set_yscale('log')
 	ax.set_ylabel(r'$K_\mathrm{d}$ [M]')
 	#ax.set_xlabel()
-	ax.set_xticks(range(1,example_count+1))
-	ax.set_xticklabels(['ZBP1', 'hnRNP A1', 'PTB34', r'IMP3\\RRM12, KH12'])
+	ax.set_xticks([1, 2, 3, 4, 5, 6.5, 8])
+	ax.set_xticklabels(['ZBP1', 'hnRNP A1', 'PTB34', r'IMP3\\RRM12\\KH12', r'IMP1\\KH1,KH2', 'U2AF', r'KSRP\\KH1 Mutant'], rotation=45)
 	ax.spines['top'].set_visible(False)
 	ax.spines['right'].set_visible(False)
-	ax.legend(fontsize = 'x-small', loc = (0.5,0.75))
+	ax.legend(fontsize = 'small', loc = (0.01,0.8))
 	fig.tight_layout()
-	fig.savefig('../fig/example_overview.pdf', bbox_inches = 'tight', dpi = 600)
-	#plt.show()
+	fig.savefig('../fig/example_overview_revision.pdf', bbox_inches = 'tight', dpi = 600)
+	plt.show()
 
 
 def count_domains(domain_string):
@@ -328,7 +303,7 @@ def rbd_distribution():
 
 
 def oligomer_distribution():
-	""" Showing the distribution of Mono-, Di- and Oligomers among RNA binding proteins. Data from PDBePISA (https://www.ebi.ac.uk/pdbe/pisa/)."""
+	"""Showing the distribution of Mono-, Di- and Oligomers among RNA binding proteins. Data from PDBePISA (https://www.ebi.ac.uk/pdbe/pisa/)."""
 
 
 	domains = np.loadtxt('../examples/RBPDB_v1.3.1_proteins.tdt', dtype = int, delimiter = '\t', converters = {8: count_domains}, usecols = (8))
@@ -435,36 +410,8 @@ def oligomer_distribution():
 	plt.show()
 
 
-def kd_linker_length():
-	fig, ax = plt.subplots(1,1, figsize=(5,3))
-
-	linker_length = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
-	kd_2 = []
-	kd_3 = []
-	kd_4 = []
-
-	for i, elem in enumerate(linker_length):
-		kd_2.append(total_kd(2, L = np.array([elem, 0, elem, 0, elem])))
-		kd_3.append(total_kd(3, L = np.array([elem, 0, elem, 0, elem])))
-		kd_4.append(total_kd(4, L = np.array([elem, 0, elem, 0, elem])))
-
-	plot_colors = plt.cm.winter(np.linspace(0,1,3))
-	
-	ax.plot(linker_length, kd_2, linestyle='', marker='.', label='2', color=plot_colors[0])
-	ax.plot(linker_length, kd_3, linestyle='', marker='.', label='3', color=plot_colors[1])
-	ax.plot(linker_length, kd_4, linestyle='', marker='.', label='4', color=plot_colors[2])
-
-	ax.set_yscale('log')
-	ax.set_ylabel(r'$K_{\mathrm{d, tot}}$ [M]')
-	ax.set_xlabel(r'RNA linker length [nt]')
-	ax.spines['top'].set_visible(False)
-	ax.spines['right'].set_visible(False)
-	ax.legend(title='No. of RBDs')
-	fig.tight_layout()
-	fig.savefig('../fig/kd_linker_length.pdf', bbox_inches = 'tight', dpi = 600)
-	plt.show()
-
 def kd_motif_density():
+	"""Plots the dependence of the Kd of the density of binding motifs on the RNA."""
 	fig, ax = plt.subplots(1,1, figsize=(5,3))
 
 	RNA_length = 200
@@ -519,20 +466,24 @@ def kd_motif_density():
 	
 	#occupancy_1 = RNA_conc/(1e-5+RNA_conc)
 	#ax.hlines(occupancy_1, 0, 100, linestyles = 'dashed', linewidth = 1, label='1')
-	ax.plot(motif_density, kd_1_density, linestyle='-', label='1', color=colors[0], marker='^')
-	ax.plot(motif_density, kd_2_density, linestyle='-', label='2', color=colors[1], marker='o')
-	ax.plot(motif_density, kd_3_density, linestyle='-', label='3', color=colors[2], marker='s')
-	ax.plot(motif_density, kd_4_density, linestyle='-', label='4', color=colors[3], marker='D')
+	ax.plot(motif_density, kd_1_density, linestyle='-', label='   ', color=colors[0], marker='^')
+	ax.plot(motif_density, kd_2_density, linestyle='-', label='   ', color=colors[1], marker='o')
+	ax.plot(motif_density, kd_3_density, linestyle='-', label='   ', color=colors[2], marker='s')
+	ax.plot(motif_density, kd_4_density, linestyle='-', label='   ', color=colors[3], marker='D')
 	#ax.plot(motif_density, kd_6_density, linestyle='-', label='6', color=colors[4], marker='h')
 
-	ax.hlines(0.1e-6, (1/200), (1/3), ls='dashed', linewidth=1)
+	RNA_conc = 0.1e-6
+	ax.hlines(RNA_conc, (1/200), (1/3), linestyle = 'dotted', linewidth=1, color='black')
+	ax.text(1/200, 8e-8, r'[RNA]$ = \SI{0.1}{\micro M}$', ha='left', va='top')
+	#ax.set_yticks([0.1e-6], minor=True)
+	#ax.set_yticklabels([r'[RNA]$ = \SI{0.1}{\micro M}$'], minor=True)
 
 	ax.set_xscale('log')
 	ax.set_yscale('log')
 	plt.xticks(motif_density, [str(Fraction(i).limit_denominator()) for i in motif_density])
 	ax.set_xticks([], minor=True)
 
-	ax.set_ylabel(r'$K_\mathrm{d, tot}$ [M]')
+	ax.set_ylabel(r'${K_\mathrm{av}}^{-1}$ [M]')
 	ax.set_xlabel(r'Binding site density [nt$^{-1}$]')
 	#ax.set_ylim(-0.1,1.1)
 	ax.spines['top'].set_visible(False)
@@ -542,41 +493,9 @@ def kd_motif_density():
 	fig.savefig('../fig/kd_motif_density.pdf', bbox_inches = 'tight', dpi = 600)
 	plt.show()
 
-def occupancy_linker_length():
-	fig, ax = plt.subplots(1,1, figsize=(5,3))
-
-	RNA_conc = 1e-6
-	linker_length = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
-	occupancy_2 = []
-	occupancy_3 = []
-	occupancy_4 = []
-
-	for i, elem in enumerate(linker_length):
-		occupancy_2.append(RNA_conc/(total_kd(2, L = np.array([elem, 0, elem, 0, elem]))+RNA_conc))
-		occupancy_3.append(RNA_conc/(total_kd(3, L = np.array([elem, 0, elem, 0, elem]))+RNA_conc))
-		occupancy_4.append(RNA_conc/(total_kd(4, L = np.array([elem, 0, elem, 0, elem]))+RNA_conc))
-
-	colors = plt.cm.Purples(np.linspace(0.5,1,3))
-	
-	#occupancy_1 = RNA_conc/(1e-5+RNA_conc)
-	ax.hlines(occupancy_1, 0, 100, linestyles = 'dashed', linewidth = 1, label='1')
-	ax.plot(linker_length, occupancy_2, linestyle='', label='2', color=colors[0], marker='^')
-	ax.plot(linker_length, occupancy_3, linestyle='', label='3', color=colors[1], marker='o')
-	ax.plot(linker_length, occupancy_4, linestyle='', label='4', color=colors[2], marker='s')
-
-	#ax.set_yscale('log')
-	ax.set_ylabel(r'Relative occupancy')
-	ax.set_xlabel(r'RNA linker length [nt]')
-	ax.set_ylim(-0.1,1.1)
-	ax.spines['top'].set_visible(False)
-	ax.spines['right'].set_visible(False)
-	ax.legend(title='No. of RBDs', loc='best')
-	fig.tight_layout()
-	#fig.savefig('../fig/occupancy_linker_length_1mM.pdf', bbox_inches = 'tight', dpi = 600)
-	plt.show()
-
 
 def occupancy_motif_density():
+	"""Plots the dependence of the RNA occupancy of the density of binding motifs on the RNA."""
 	fig, ax = plt.subplots(1,1, figsize=(5,3))
 
 	RNA_length = 200
@@ -658,13 +577,13 @@ def occupancy_motif_density():
 
 	#occupancy_1 = RNA_conc/(1e-5+RNA_conc)
 	#ax.hlines(occupancy_1, 0, 100, linestyles = 'dashed', linewidth = 1, label='1')
-	ax.plot(motif_density, occupancy_1, linestyle='', label='1', color=colors[0], marker='^')
-	ax.plot(motif_density, occupancy_2, linestyle='', label='2', color=colors[1], marker='o')
-	ax.plot(motif_density, occupancy_3, linestyle='', label='3', color=colors[2], marker='s')
-	ax.plot(motif_density, occupancy_4, linestyle='', label='4', color=colors[3], marker='D')
+	ax.plot(motif_density, occupancy_1, linestyle='', label='   ', color=colors[0], marker='^')
+	ax.plot(motif_density, occupancy_2, linestyle='', label='   ', color=colors[1], marker='o')
+	ax.plot(motif_density, occupancy_3, linestyle='', label='   ', color=colors[2], marker='s')
+	ax.plot(motif_density, occupancy_4, linestyle='', label='   ', color=colors[3], marker='D')
 	#ax.plot(motif_density, occupancy_6, linestyle='', label='6', color=colors[4], marker='h')
 
-	ax.hlines(0.5, (1/200), (1/3), linestyle='dashed', linewidth=1)
+	ax.hlines(0.5, (1/200), (1/3), linestyle='dashdot', linewidth=1)
 
 	ax.set_xscale('log')
 	#ax.set_yscale('log')
@@ -677,28 +596,110 @@ def occupancy_motif_density():
 	#ax.set_xlim(1/250, 1/2.5)
 	ax.spines['top'].set_visible(False)
 	ax.spines['right'].set_visible(False)
-	ax.legend(title='No. of RBDs', loc='best')
+	ax.legend(title=r'\begin{center}[RNA]$ = \SI{0.1}{\micro M}$\\No. of RBDs\end{center}', loc=[0.02, 0.52])
 	fig.tight_layout()
 	fig.savefig('../fig/occupancy_motif_density_fit.pdf', bbox_inches = 'tight', dpi = 600)
 	plt.show()
 
 
+def kd_lrna_lprot():
+	"""Plots the Kav in dependence of RNA and protein linker lengths."""
+	fig, ax = plt.subplots(1,1, figsize=(5,3))
+
+	L = np.arange(1, 20, 1)
+	L_p = np.arange(1, 100, 1)
+	kd = np.zeros((L.shape[0], L_p.shape[0]))
+
+	for i, elem_i in enumerate(L):
+		for j, elem_j in enumerate(L_p):
+			kd[i,j] = total_kd(2, L = np.array([elem_i]), L_p = np.array([elem_j]))
+
+	color_plot = plt.pcolormesh(np.append(L_p-0.5, L_p[-1]+0.5), np.append(L-0.5, L[-1]+0.5), kd, norm=colors.LogNorm(vmin=kd.min(), vmax=kd.max()), cmap='magma_r', rasterized=True)
+	cbar = plt.colorbar(color_plot, label=r'${K_\mathrm{av}}^{-1}$ [M]')
+	
+	plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
+	plt.gca().set_xlabel(r'$L_\text{protein}$ [aa]')
+	plt.gca().set_ylabel(r'$L$ [nt]')
+	plt.gca().spines['top'].set_visible(False)
+	plt.gca().spines['right'].set_visible(False)
+	fig.tight_layout()
+	#fig.savefig('../fig/kd_lrna_lprot.pdf', bbox_inches = 'tight', dpi = 600)
+	plt.show()
+
+
+def ceff_L():
+	"""Plots the effective concentration (particle in a sphere and gaussian/worm-like chain) for different RNA linker lengths between binding motifs."""
+	fig, ax = plt.subplots(1,1, figsize=(5,3))
+
+	L = np.arange(1, 35, 1)
+	d = np.array([[0, 3e-9], [3e-9, 0]])
+	c_gauss = np.zeros((L.shape[0]))
+	c_sphere = ((4/3) * constants.pi * L**3)**(-1)
+	kd_1 = 1e-5
+
+	for i, elem_i in enumerate(L):
+			c_gauss[i] = c_eff(2, L = np.array([elem_i]), d = d, kd=np.array([kd_1,kd_1]))
+
+	
+	plt.plot(L, c_gauss*10**(3), label='WLC', color='red', marker='o', linestyle='dashed')
+	plt.plot(L[3:], c_sphere[3:]*10**(3), label='Uniform', color='black', marker='s', linestyle='dashed')
+
+	plt.yscale('log')
+
+	#plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
+	plt.gca().set_xlabel(r'$l_{12}$ [nt]')
+	plt.gca().set_ylabel(r'$c_{12}$ [mM]')
+	plt.gca().spines['top'].set_visible(False)
+	plt.gca().spines['right'].set_visible(False)
+	plt.legend()
+	fig.tight_layout()
+	fig.savefig('../fig/ceff_L.pdf', bbox_inches = 'tight', dpi = 600)
+	plt.show()
+
+
 def total_kd(N, **kwargs):
+	"""Return the total Kd for N binding sites with the given parameters."""
 	params = rbp_model.get_model_parameters('../examples/N_' + str(N) + '.csv')
 	#params: n, prot0, rna0, on (1/kd), off, volume, lp, d, L, L_p, lp_p, time
 	#change parameters according to the parameters passed in kwargs
-	parameter_map = {'kd': 3, 'L': 8}
+	parameter_map = {'kd': 3, 'd': 7, 'L': 8, 'L_p': 9}
 	for key, value in kwargs.items():
 		param_index = parameter_map.get(key)
 		if key == 'kd':
 			params[param_index] = 1/value
+		if key == 'd':
+			params[param_index] = value
 		if key == 'L':
 			params[param_index] = [i*lpb for i in value]
 			#params[param_index] = value * lpb
+		if key == 'L_p':
+			params[param_index] = [i*lpaa for i in value]
 
 
 	model = rbp_model.nxn(*params)
 	return model.analytical_kd()
+
+def c_eff(N, **kwargs):
+	"""Return the effective local concentration for N binding sites with the given parameters."""
+	params = rbp_model.get_model_parameters('../examples/N_' + str(N) + '.csv')
+	#change parameters according to the parameters passed in kwargs
+	parameter_map = {'kd': 3, 'd': 7, 'L': 8, 'L_p': 9}
+	for key, value in kwargs.items():
+		param_index = parameter_map.get(key)
+		if key == 'kd':
+			params[param_index] = 1/value
+		if key == 'd':
+			params[param_index] = value
+		if key == 'L':
+			params[param_index] = [i*lpb for i in value]
+			#params[param_index] = value * lpb
+		if key == 'L_p':
+			params[param_index] = [i*lpaa for i in value]
+
+
+	model = rbp_model.nxn(*params)
+	return model.get_concentration(0,1)
+
 
 def hill_func(conc, ka, n):
 	return(conc**n / (ka**n + conc**n))
@@ -709,13 +710,12 @@ def hill_fit(occupancy, motif_density, guess):
 if __name__ == '__main__':
 	#kd_N()
 	#kd_tot_k3()
-	#kd_heat()
 	#N_4_trajectory()
 	#N_4_trajectory_detail()
-	#example_overview()
+	example_overview()
 	#rbd_distribution()
 	#oligomer_distribution()
-	#kd_linker_length()
 	#kd_motif_density()
-	#occupancy_linker_length()
-	occupancy_motif_density()
+	#occupancy_motif_density()
+	#kd_lrna_lprot()
+	#ceff_L()
