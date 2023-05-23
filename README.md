@@ -7,7 +7,7 @@
 [Stitzinger S.H., Sohrabi-Jahromi S., and Söding J. (2021) Cooperativity boosts affinity and specificity of proteins with multiple RNA-binding domains. bioRxiv](https://www.biorxiv.org/content/10.1101/2021.01.27.428308v1).
 
 ## Abstract
-Numerous cellular processes rely on the binding of proteins with high affinity to specific sets of RNAs. Yet most RNA binding domains display low specificity and affinity, to the extent that for most RNA-binding domains, the enrichment of the best binding motif measured by HT-SELEX or RNA bind-n-seq is usually below 10-fold, dramatically lower than that of DNA-binding domains. Here, we develop a thermodynamic model to predict the binding affinity for proteins with any number of RNA-binding domains given the affinities of their isolated domains. For the four proteins in which affinities for individual domains have been measured the model predictions are in good agreement with experimental values. The model gives insight into how proteins with multiple RNA-binding domains can reach affinities and specificities orders of magnitude higher than their individual domains. Our results contribute towards resolving the conundrum of missing specificity and affinity of RNA binding proteins and underscore the need for bioinformatic methods that can learn models for multi-domain RNA binding proteins from high-throughput *in-vitro* and *in-vivo* experiments.
+Numerous cellular processes rely on the binding of proteins with high affinity to specific sets of RNAs. Yet most RNA-binding domains display low specificity and affinity in comparison to DNA-binding domains. The best binding motif is typically only enriched by less than a factor 10 in high-throughput RNA SELEX or RNA bind-n-seq measurements. Here, we provide insight into how cooperative binding of multiple domains in RNA-binding proteins (RBPs) can boost their effective affinity and specificity orders of magnitude higher than their individual domains. We present a thermodynamic model to calculate the effective binding affinity (avidity) for idealized, sequence-specific RBPs with any number of RBDs given the affinities of their isolated domains. For seven proteins in which affinities for individual domains have been measured, the model predictions are in good agreement with measurements. The model also explains how a two-fold difference in binding site density on RNA can increase protein occupancy ten-fold. It is therefore rationalized that local clusters of binding motifs are the physiological binding targets of multi-domain RBPs.
 
 ## Simulation script
 `rbp_model.py` implements the setup of the simulations and the calculations based on our analytical approach. The parameters of the proteins are loaded from text files in the folder `examples`. 
@@ -44,6 +44,7 @@ To plot the figures in our paper the following functions from the script `visual
 	oligomer_distribution()
 
 **Figure 3C** Effective concentration *c*<sub>12</sub> of domain 2 at RNA site 1, when at least one RNA site is already bound
+
 	ceff_L()
 	
 **Figure 4** Comparison of experimental *K*<sub>d</sub>s to predictions from our model are in good agreement
