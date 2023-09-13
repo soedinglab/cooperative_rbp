@@ -4,7 +4,7 @@
  [![Issues](https://img.shields.io/github/issues/soedinglab/cooperative_rbp.svg)](https://github.com/soedinglab/cooperative_rbp/issues)
 
 ##  Publication
-[Stitzinger S.H., Sohrabi-Jahromi S., and Söding J. (2021) Cooperativity boosts affinity and specificity of proteins with multiple RNA-binding domains. NAR Genomics & Bioinformatics](https://doi.org/10.1093/nargab/lqad057).
+[Stitzinger S.H., Sohrabi-Jahromi S., and Söding J. (2023) Cooperativity boosts affinity and specificity of proteins with multiple RNA-binding domains. NAR Genomics & Bioinformatics](https://doi.org/10.1093/nargab/lqad057).
 
 ## Abstract
 Numerous cellular processes rely on the binding of proteins with high affinity to specific sets of RNAs. Yet most RNA-binding domains display low specificity and affinity in comparison to DNA-binding domains. The best binding motif is typically only enriched by less than a factor 10 in high-throughput RNA SELEX or RNA bind-n-seq measurements. Here, we provide insight into how cooperative binding of multiple domains in RNA-binding proteins (RBPs) can boost their effective affinity and specificity orders of magnitude higher than their individual domains. We present a thermodynamic model to calculate the effective binding affinity (avidity) for idealized, sequence-specific RBPs with any number of RBDs given the affinities of their isolated domains. For seven proteins in which affinities for individual domains have been measured, the model predictions are in good agreement with measurements. The model also explains how a two-fold difference in binding site density on RNA can increase protein occupancy ten-fold. It is therefore rationalized that local clusters of binding motifs are the physiological binding targets of multi-domain RBPs.
